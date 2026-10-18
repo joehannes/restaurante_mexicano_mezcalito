@@ -41,7 +41,7 @@ export async function pageContext(lang: string | undefined, request?: Request) {
 export type PageContext = NonNullable<Awaited<ReturnType<typeof pageContext>>>;
 
 /** Every localized page a guest or a search engine may land on. */
-export const PUBLIC_PATHS = ['/', '/menu', '/tonight', '/reserve', '/parties', '/story', '/find-us'];
+export const PUBLIC_PATHS = ['/', '/menu', '/tonight', '/reserve', '/selector', '/radio', '/parties', '/story', '/find-us'];
 
 export const href =(locale: Locale, path = '/') => `/${locale}${path === '/' ? '/' : path}`;
 

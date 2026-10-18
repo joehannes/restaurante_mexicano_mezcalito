@@ -34,6 +34,8 @@ interface MezcalitoSecrets {
   EMAIL_FROM?: string;
   /** Where new orders and party requests are emailed for the staff (comma-separated). */
   STAFF_EMAILS?: string;
+  /** Rate limit for the public POST endpoints (wrangler.jsonc `ratelimits`). */
+  PUBLIC_LIMIT?: RateLimit;
 }
 
 interface Env extends MezcalitoSecrets {}

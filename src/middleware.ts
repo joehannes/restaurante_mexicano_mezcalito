@@ -1,6 +1,7 @@
 /**
  * Everything under /admin and /api/admin needs a signed-in member of staff.
  * Which staff may do what is checked by each route (see server/admin.ts).
+ * Guests' posts to the API are rate limited.
  */
 import { defineMiddleware } from 'astro:middleware';
 import { env } from 'cloudflare:workers';
@@ -8,7 +9,12 @@ import { staffFor } from './server/access';
 
 const ADMIN = /^\/(api\/)?admin(\/|$)/;
 
-export const onRequest = defineMiddleware(async ({ request, url, locals }, next) => {
+export const onRequest = defineMiddleware(async ({ request, url, locals, clientAddress }, next) => {
+  // Guests' posts (orders, bookings, parties, The Selector) are rate limited per visitor.
+  if (request.method === 'POST' && url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/admin/') && env.PUBLIC_LIMIT) {
+    const { success } = await env.PUBLIC_LIMIT.limit({ key: clientAddress ?? 'unknown' });
+    if (!success) return new Response(JSON.stringify({ error: 'rate_limited' }), { status: 429, headers: { 'content-type': 'application/json', 'retry-after': '60' } });
+  }
   if (!ADMIN.test(url.pathname)) return next();
 
   const staff = await staffFor(request, env, import.meta.env.DEV);
