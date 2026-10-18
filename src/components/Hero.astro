@@ -1,0 +1,140 @@
+---
+/**
+ * The facade hero: Mezcalito's white terrace on Calle Pedro Mir, drawn, with
+ * the sky set by Bávaro's actual time of day. Morning sun, midday blue, a
+ * happy-hour sunset, and at night the string lights come on over the bays.
+ *
+ * Inline SVG, no image request: it paints with the HTML and costs nothing for
+ * the largest-contentful-paint budget. Only the bulbs (opacity) and the palms
+ * (transform) move.
+ */
+import type { PageContext } from '../server/page';
+import { localized } from '../domain/types';
+import { activeSpecials } from '../domain/schedule';
+import { formatClock } from '../lib/format';
+import { t } from '../i18n/ui';
+import { href } from '../server/page';
+import OpenStatus from './OpenStatus.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { locale, part, season } = ctx;
+
+const SKY = {
+  morning: ['#ffd8a8', '#bfe7f3'],
+  midday: ['#68cfe3', '#c9f1f6'],
+  sunset: ['var(--c-mezcal)', 'var(--c-sunset)'],
+  night: ['#0d0b1a', 'var(--c-mezcal)'],
+} as const;
+const [skyTop, skyBottom] = SKY[part];
+const night = part === 'night' || part === 'sunset';
+
+const happyHour = activeSpecials(ctx.now, ctx.specials, ctx.tz).find((s) => s.id === 'happy-hour');
+const kicker = season ? localized(season.hero.kicker, locale) : t(locale, `hero.${part}.kicker` as const);
+const headline = season ? localized(season.hero.headline, locale) : t(locale, `hero.${part}.headline` as const);
+const body = season ? localized(season.hero.body, locale) : `${t(locale, 'brand.tagline')} · ${t(locale, 'brand.slogan')}`;
+const bulbs = Array.from({ length: 17 }, (_, i) => {
+  // Hang each bulb from the quadratic wire drawn below (M46 118 Q180 136 314 118).
+  const u = i / 16;
+  return { x: 46 + 268 * u, y: 118 + 36 * u * (1 - u), delay: (i % 5) * 0.4 };
+});
+---
+<section class:list={['relative overflow-hidden', night ? 'bg-ink text-cream' : 'bg-cream text-ink']} data-part={part}>
+  <svg viewBox="0 0 360 200" class="block w-full" role="img" aria-label="Mezcalito’s terrace on Calle Pedro Mir" preserveAspectRatio="xMidYMax slice" style="max-height: 46vh">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color={skyTop} />
+        <stop offset="1" stop-color={skyBottom} />
+      </linearGradient>
+      <radialGradient id="glow" cx="0.5" cy="0.3" r="0.8">
+        <stop offset="0" stop-color="#ffcf6b" stop-opacity="0.9" />
+        <stop offset="1" stop-color="#ffcf6b" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+    <rect width="360" height="200" fill="url(#sky)" />
+
+    {part === 'night' ? (
+      <g fill="var(--c-cream)">
+        <path d="M300 30a14 14 0 1 0 12 22 11 11 0 1 1-12-22z" />
+        {[[40, 20], [90, 38], [140, 14], [210, 28], [250, 12], [330, 60]].map(([x, y]) => <circle cx={x} cy={y} r="1.1" opacity="0.8" />)}
+      </g>
+    ) : (
+      <circle
+        cx={part === 'morning' ? 70 : part === 'midday' ? 200 : 180}
+        cy={part === 'morning' ? 52 : part === 'midday' ? 26 : 70}
+        r={part === 'sunset' ? 26 : 16}
+        fill={part === 'sunset' ? 'var(--c-gold)' : '#fff3b0'}
+      />
+    )}
+
+    <!-- Palms, swaying from the base of the trunk -->
+    <g class="palm" style="transform-origin: 20px 175px" fill={night ? '#08070d' : '#1d5c3a'}>
+      <path d="M18 175c2-30 4-62 10-92l3 1c-5 30-6 61-7 91z" />
+      <path d="M29 84c-14-8-30-6-38 2 12-4 25-2 38-2zM29 84c-6-12-20-18-32-16 12 2 24 8 32 16zM29 84c10-12 26-14 36-10-12 0-24 4-36 10zM29 84c14-4 28 2 34 12-10-6-22-10-34-12z" />
+    </g>
+    <g class="palm" style="transform-origin: 342px 178px; animation-delay: -2s" fill={night ? '#08070d' : '#1d5c3a'}>
+      <path d="M340 178c-1-28-3-55-9-80l-3 1c5 26 6 52 6 79z" />
+      <path d="M330 99c14-8 30-6 38 2-12-4-25-2-38-2zM330 99c6-12 20-18 32-16-12 2-24 8-32 16zM330 99c-10-12-26-14-36-10 12 0 24 4 36 10z" />
+    </g>
+
+    <!-- The building -->
+    <rect x="34" y="66" width="292" height="114" fill={night ? '#e9e2d4' : '#fbfaf6'} />
+    <rect x="34" y="66" width="292" height="30" fill={night ? '#f4efe4' : '#ffffff'} stroke="#141210" stroke-opacity="0.12" />
+    <text x="180" y="89" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="22" letter-spacing="7" fill="#141210">MEZCALITO</text>
+
+    <!-- Three bays between four columns; lit from inside after dark -->
+    {[0, 1, 2].map((i) => (
+      <g>
+        <rect x={52 + i * 88} y="100" width="80" height="72" fill={night ? '#3a2416' : '#6e5a48'} />
+        {night && <rect x={52 + i * 88} y="100" width="80" height="72" fill="url(#glow)" />}
+      </g>
+    ))}
+    {[0, 1, 2, 3].map((i) => <rect x={42 + i * 88} y="96" width="10" height="80" fill={night ? '#f4efe4' : '#ffffff'} />)}
+
+    <!-- String lights -->
+    <path d="M46 118 Q180 136 314 118" fill="none" stroke="#141210" stroke-width="0.8" opacity={night ? 0.9 : 0.35} />
+    {bulbs.map((b) => (
+      <circle cx={b.x} cy={b.y + 3} r="2.2" fill={night ? '#ffd76a' : '#d9d2c4'} class={night ? 'bulb' : undefined} style={`animation-delay:${b.delay}s`} />
+    ))}
+
+    <!-- Red pavers -->
+    <rect x="0" y="176" width="360" height="24" fill="#b5523b" />
+    <path d="M0 184h360M0 192h360" stroke="#8f3d2b" stroke-width="0.8" />
+  </svg>
+
+  <div class="mx-auto max-w-6xl px-4 pt-6 pb-8">
+    <p class="font-display tracking-wide text-gold uppercase">{kicker}</p>
+    <h1 class="mt-1 font-display text-5xl leading-[0.95] uppercase sm:text-6xl md:text-7xl">{headline}</h1>
+    <p class="mt-3 max-w-xl text-lg opacity-90">{body}</p>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <OpenStatus ctx={ctx} class={night ? 'bg-cream/10' : 'bg-ink/5'} />
+      {happyHour && (
+        <span class="sticker bg-gold text-ink" style="--tilt:-4deg">
+          {t(locale, 'hero.happyHourEnds', { time: formatClock(happyHour.end, locale) })}
+        </span>
+      )}
+    </div>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href={href(locale, '/menu')} class="cone rounded-full bg-hibiscus px-7 py-3 text-lg font-bold text-cream shadow-[4px_4px_0_var(--c-ink)]">
+        {t(locale, 'hero.order')}
+      </a>
+      <a
+        href={href(locale, '/reserve')}
+        class:list={['rounded-full border-2 px-7 py-3 text-lg font-bold', night ? 'border-cream' : 'border-ink']}
+      >
+        {t(locale, 'hero.book')}
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .palm {
+    animation: sway 7s ease-in-out infinite;
+  }
+  .bulb {
+    animation: twinkle 3.2s ease-in-out infinite;
+  }
+</style>

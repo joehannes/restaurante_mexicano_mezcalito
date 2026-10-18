@@ -1,0 +1,55 @@
+---
+import type { PageContext } from '../server/page';
+import { localized } from '../domain/types';
+import { formatClock } from '../lib/format';
+import { t } from '../i18n/ui';
+import { href } from '../server/page';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { locale, site } = ctx;
+const tel = site.contact.phone;
+const wa = site.contact.whatsapp.replace(/\D/g, '');
+// Every day has the same hours today; show one line until that changes.
+const ranges = site.hours[0] ?? [];
+const sameEveryDay = site.hours.every((d) => JSON.stringify(d) === JSON.stringify(ranges));
+---
+<footer class="mt-16 bg-ink pb-24 text-cream md:pb-10">
+  <div class="papel-picado h-6" aria-hidden="true"></div>
+  <div class="mx-auto grid max-w-6xl gap-8 px-4 pt-10 md:grid-cols-3">
+    <div>
+      <p class="font-display text-3xl tracking-[0.12em] text-gold uppercase">Mezcalito</p>
+      <p class="mt-1 text-sm">{t(locale, 'brand.tagline')} · {t(locale, 'brand.slogan')}</p>
+      <address class="mt-4 text-sm not-italic leading-relaxed">
+        {site.address.street}, {site.address.locality}<br />
+        {site.address.region}, República Dominicana<br />
+        <span class="text-cream/70">{localized(site.address.note, locale)}</span>
+      </address>
+    </div>
+    <div class="text-sm">
+      <p class="font-bold">{t(locale, 'find.hours')}</p>
+      {sameEveryDay && ranges.length ? (
+        <p>{t(locale, 'find.everyDay')} · {ranges.map((r) => `${formatClock(r.open, locale)}–${formatClock(r.close, locale)}`).join(', ')}</p>
+      ) : (
+        <p><a class="underline" href={href(locale, '/find-us')}>{t(locale, 'find.hours')}</a></p>
+      )}
+      <p class="mt-4 flex flex-wrap gap-3">
+        <a class="rounded-full bg-jungle px-3 py-1 font-semibold" href={`https://wa.me/${wa}`}>{t(locale, 'find.whatsapp')}</a>
+        <a class="rounded-full border border-cream/40 px-3 py-1 font-semibold" href={`tel:${tel}`}>{t(locale, 'find.call')}</a>
+        <a class="rounded-full border border-cream/40 px-3 py-1 font-semibold" href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
+      </p>
+    </div>
+    <div class="text-sm">
+      <p class="font-bold">{t(locale, 'footer.follow')}</p>
+      <p class="mt-2 flex flex-wrap gap-3">
+        {site.social.instagram && <a class="underline" href={site.social.instagram} rel="me">Instagram</a>}
+        {site.social.tiktok && <a class="underline" href={site.social.tiktok} rel="me">TikTok</a>}
+        {site.social.facebook && <a class="underline" href={site.social.facebook} rel="me">Facebook</a>}
+      </p>
+      {site.social.ubereats && <p class="mt-3"><a class="underline" href={site.social.ubereats}>{t(locale, 'footer.delivery')}</a></p>}
+      <p class="mt-4 text-cream/60">{t(locale, 'footer.prices')}</p>
+    </div>
+  </div>
+</footer>

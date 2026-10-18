@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { negotiate, t } from './ui';
+import { negotiate, t, when } from './ui';
 
 describe('negotiate', () => {
   it('picks the most wanted launch language', () => {
@@ -15,6 +15,15 @@ describe('negotiate', () => {
 
 describe('t', () => {
   it('fills placeholders', () => {
-    expect(t('es', 'status.closes', { time: '12 am' })).toBe('cierra 12 am');
+    expect(t('es', 'status.closes', { time: '00:00' })).toBe('hasta las 00:00');
+    expect(t('en', 'cart.view', { count: 3 })).toBe('View order · 3');
+  });
+});
+
+describe('when', () => {
+  it('says today, tomorrow or the weekday', () => {
+    expect(when({ date: '2026-10-20', time: '08:00' }, '2026-10-20', 'en')).toBe('today at 8 am');
+    expect(when({ date: '2026-10-21', time: '08:00' }, '2026-10-20', 'es')).toBe('mañana a las 08:00');
+    expect(when({ date: '2026-10-23', time: '08:00' }, '2026-10-20', 'en')).toBe('Friday at 8 am');
   });
 });

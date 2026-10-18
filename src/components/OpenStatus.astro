@@ -1,0 +1,23 @@
+---
+import type { PageContext } from '../server/page';
+import { formatClock } from '../lib/format';
+import { t, when } from '../i18n/ui';
+
+interface Props {
+  ctx: PageContext;
+  class?: string;
+}
+const { ctx, class: className = '' } = Astro.props;
+const { status, locale, today } = ctx;
+---
+<span class:list={['inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold', className]}>
+  <span
+    class:list={['size-2 rounded-full', status.open ? 'bg-jungle animate-[pulse-dot_2s_ease-in-out_infinite]' : 'bg-sunset']}
+    aria-hidden="true"
+  ></span>
+  {status.open
+    ? `${t(locale, 'status.open')} · ${t(locale, 'status.closes', { time: formatClock(status.closesAt.time, locale) })}`
+    : status.opensAt
+      ? `${t(locale, 'status.closed')} · ${t(locale, 'status.opens', { when: when(status.opensAt, today, locale) })}`
+      : t(locale, 'status.closed')}
+</span>

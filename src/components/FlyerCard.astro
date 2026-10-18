@@ -1,0 +1,59 @@
+---
+/**
+ * One night on the line-up wall, as a dancehall flyer: a colour block, the
+ * night in big poster type, when it runs, and the price on a sticker.
+ */
+import type { Locale } from '../domain/types';
+import { localized } from '../domain/types';
+import type { SpecialRecord } from '../server/content';
+import { formatClock, formatPrice } from '../lib/format';
+import { t, weekdayName } from '../i18n/ui';
+import { href } from '../server/page';
+
+interface Props {
+  special: SpecialRecord;
+  locale: Locale;
+  index: number;
+  live?: boolean;
+}
+const { special, locale, index, live = false } = Astro.props;
+
+// 2026-10-18 is a Sunday: date for weekday n is the 18th + n.
+const dayName = (n: number) => weekdayName(`2026-10-${18 + n}`, locale);
+const days = special.days.length ? special.days.map(dayName).join(' · ') : t(locale, 'tonight.everyDay');
+const allDay = special.start <= '08:00' && special.end === '24:00';
+const hours = allDay ? t(locale, 'tonight.allDay') : `${formatClock(special.start, locale)}–${formatClock(special.end, locale)}`;
+const tilt = [-2, 1.5, -1, 2, -1.5][index % 5];
+const ctaHref = special.cta === 'book' ? href(locale, '/reserve') : href(locale, '/menu');
+const ctaText = special.cta === 'book' ? t(locale, 'nav.bookTable') : t(locale, 'nav.order');
+---
+<article
+  class="flyer halftone relative flex min-h-64 flex-col justify-between overflow-hidden rounded-2xl p-5 shadow-[6px_6px_0_var(--c-ink)]"
+  style={`--tilt:${tilt}deg; background-color: var(--c-${special.flyer.bg}); color: var(--c-${special.flyer.ink})`}
+>
+  <div>
+    <p class="text-xs font-bold tracking-[0.18em] uppercase">{days}</p>
+    <p class="text-xs font-semibold opacity-80">{hours}</p>
+    <h3 class="mt-3 font-display text-4xl leading-[0.9] uppercase">{localized(special.title, locale)}</h3>
+    {special.body && <p class="mt-2 text-sm font-medium">{localized(special.body, locale)}</p>}
+  </div>
+  <div class="mt-5 flex items-end justify-between gap-3">
+    {special.cta !== 'none' ? (
+      <a href={ctaHref} class="rounded-full bg-ink px-4 py-2 text-sm font-bold text-cream">{ctaText}</a>
+    ) : <span />}
+    {special.price !== null && (
+      <span class="sticker bg-cream text-xl text-ink" style="--tilt:8deg">{formatPrice(special.price, locale)}</span>
+    )}
+  </div>
+  {live && <span class="absolute top-3 right-3 sticker bg-hibiscus text-sm text-cream" style="--tilt:6deg">{t(locale, 'tonight.now')}</span>}
+</article>
+
+<style>
+  .flyer {
+    transform: rotate(var(--tilt));
+    transition: transform 200ms ease;
+  }
+  .flyer:hover {
+    transform: rotate(0deg) translateY(-4px);
+  }
+</style>

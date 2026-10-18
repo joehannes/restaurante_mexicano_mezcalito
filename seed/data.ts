@@ -286,10 +286,10 @@ export const items: SeedItem[] = [
     id: 'rasta-pasta', category: 'rasta-pasta', heat: 1, fusion: -1, tags: ['signature', 'first-timer'],
     name: same('Rasta Pasta'),
     description: L(
-      'Penne in a jerk-kissed Alfredo with bell peppers, onion and parmesan. Guests’ favourite: oxtail.',
-      'Penne en Alfredo con toque jerk, pimientos, cebolla y parmesano. La favorita: rabo de res.',
-      'Penne dans une Alfredo relevée au jerk, poivrons, oignon et parmesan. La préférée : queue de bœuf.',
-      'Penne in Alfredo mit Jerk-Note, Paprika, Zwiebel und Parmesan. Gästeliebling: Ochsenschwanz.',
+      'Penne in creamy Alfredo with bell peppers, onion and parmesan. Guests’ favourite: oxtail.',
+      'Penne en salsa Alfredo con pimientos, cebolla y parmesano. La favorita: rabo de res.',
+      'Penne sauce Alfredo, poivrons, oignon et parmesan. La préférée : queue de bœuf.',
+      'Penne in Alfredosoße mit Paprika, Zwiebel und Parmesan. Gästeliebling: Ochsenschwanz.',
     ),
     variants: [
       { id: 'chicken', label: chicken, price: rd(1199) },
@@ -306,10 +306,10 @@ export const items: SeedItem[] = [
     id: 'jerk', category: 'specialties', groups: ['side'], heat: 4, fusion: -2, tags: ['signature'],
     name: L('Jamaican jerk', 'Jerk jamaiquino', 'Jerk jamaïcain', 'Jamaikanisches Jerk'),
     description: L(
-      'Green seasoning, pimento and scotch bonnet heat. With a side of your choice.',
+      'Green seasoning, pimento and habanero heat. With a side of your choice.',
       'Sazón verde, pimienta de Jamaica y picante de ají. Con acompañante a elegir.',
-      'Assaisonnement vert, piment de la Jamaïque et piment scotch bonnet. Avec un accompagnement au choix.',
-      'Grüne Würzpaste, Piment und Scotch-Bonnet-Schärfe. Mit Beilage nach Wahl.',
+      'Assaisonnement vert, piment de la Jamaïque et habanero. Avec un accompagnement au choix.',
+      'Grüne Würzpaste, Piment und Habanero-Schärfe. Mit Beilage nach Wahl.',
     ),
     variants: [
       { id: 'chicken', label: chicken, price: rd(1199) },
@@ -330,10 +330,10 @@ export const items: SeedItem[] = [
     id: 'braised-oxtail', category: 'specialties', price: rd(1799), groups: ['side'], heat: 1, fusion: -2, tags: ['signature', 'first-timer'],
     name: L('Braised oxtail', 'Rabo de res guisado', 'Queue de bœuf braisée', 'Geschmorter Ochsenschwanz'),
     description: L(
-      'Fall-off-the-bone oxtail with butter beans, peppers and pimento — the one Punta Cana talks about. With a side of your choice.',
-      'Rabo que se deshace, con habas, pimientos y pimienta de Jamaica — del que habla Punta Cana. Con acompañante a elegir.',
-      'Queue de bœuf fondante, haricots beurre, poivrons et piment de la Jamaïque — celle dont parle Punta Cana. Avec un accompagnement au choix.',
-      'Zarter Ochsenschwanz mit Butterbohnen, Paprika und Piment — der, von dem Punta Cana spricht. Mit Beilage nach Wahl.',
+      'Braised oxtail with beans, onion, peppers and pimento — the one Punta Cana talks about. With a side of your choice.',
+      'Rabo de res guisado con habichuelas, cebolla, pimientos y pimienta de Jamaica — del que habla Punta Cana. Con acompañante a elegir.',
+      'Queue de bœuf braisée, haricots, oignon, poivrons et piment de la Jamaïque — celle dont parle Punta Cana. Avec un accompagnement au choix.',
+      'Geschmorter Ochsenschwanz mit Bohnen, Zwiebel, Paprika und Piment — der, von dem Punta Cana spricht. Mit Beilage nach Wahl.',
     ),
   },
   {
@@ -739,6 +739,8 @@ export const settings = {
     facebook: 'https://www.facebook.com/profile.php?id=100064275751852',
     ubereats: 'https://www.ubereats.com/do-en/store/mezcalito-bar-and-grill-punta-cana/Wqf2ad_DXYeWDoK7TzYL-w',
   },
+  // Shown on the home page as written; staff update it from Google.
+  reviewsSummary: { rating: 4.6, count: 1150, source: 'Google', asOf: '2026-10' },
   pricing: {
     itbisRate: 0.18,
     serviceRate: { dine_in: 0.1, pickup: 0.1, delivery: 0.1 },

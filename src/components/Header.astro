@@ -1,0 +1,60 @@
+---
+/**
+ * The fascia: black band, painted wordmark — the same as the sign over
+ * Mezcalito's terrace on Calle Pedro Mir. Solid colour, no backdrop blur, so
+ * a sticky header costs nothing while scrolling.
+ */
+import type { Locale } from '../domain/types';
+import { LOCALES, LOCALE_NAMES, t } from '../i18n/ui';
+import { href } from '../server/page';
+
+interface Props {
+  locale: Locale;
+  path: string;
+}
+const { locale, path } = Astro.props;
+const nav = [
+  ['/menu', 'nav.menu'],
+  ['/tonight', 'nav.tonight'],
+  ['/reserve', 'nav.bookTable'],
+  ['/story', 'nav.story'],
+  ['/find-us', 'nav.findUs'],
+] as const;
+---
+<header class="sticky top-0 z-40 bg-ink text-cream">
+  <div class="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
+    <a href={href(locale)} class="font-display text-2xl tracking-[0.12em] text-gold uppercase" aria-label="Mezcalito — home">
+      Mezcalito
+    </a>
+    <nav class="ml-6 hidden gap-5 text-sm font-semibold md:flex" aria-label="Main">
+      {nav.map(([p, key]) => (
+        <a href={href(locale, p)} class:list={['hover:text-gold', path === p && 'text-gold']} aria-current={path === p ? 'page' : undefined}>
+          {t(locale, key)}
+        </a>
+      ))}
+    </nav>
+    <div class="ml-auto flex items-center gap-2">
+      <details class="relative">
+        <summary class="cursor-pointer list-none rounded-full border border-cream/30 px-3 py-1 text-xs font-bold uppercase" aria-label={t(locale, 'nav.language')}>
+          {locale}
+        </summary>
+        <ul class="absolute right-0 mt-2 w-36 overflow-hidden rounded-xl bg-cream text-ink shadow-lg">
+          {LOCALES.map((l) => (
+            <li>
+              <a href={href(l, path)} hreflang={l} lang={l} class:list={['block px-4 py-2 text-sm hover:bg-gold', l === locale && 'font-bold']}>
+                {LOCALE_NAMES[l]}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+      <a
+        href={href(locale, '/menu')}
+        class="hidden items-center gap-2 rounded-full bg-hibiscus px-4 py-1.5 text-sm font-bold text-cream md:inline-flex"
+      >
+        {t(locale, 'nav.order')}
+        <span data-cart-count class="hidden min-w-5 rounded-full bg-cream px-1.5 text-center text-xs text-ink"></span>
+      </a>
+    </div>
+  </div>
+</header>

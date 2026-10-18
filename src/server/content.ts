@@ -9,6 +9,9 @@ export interface SiteSettings {
   contact: { phone: string; whatsapp: string; email: string };
   address: { street: string; locality: string; region: string; country: string; lat: number; lng: number; note: Localized };
   social: Record<string, string>;
+  reviewsSummary?: { rating: number; count: number; source: string; asOf: string };
+  pricing: import('../domain/types').PricingSettings;
+  deliveryZones: import('../domain/types').DeliveryZone[];
 }
 
 export interface SpecialRecord extends Special {

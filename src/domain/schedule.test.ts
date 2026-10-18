@@ -158,3 +158,15 @@ describe('activeSeason', () => {
     expect(activeSeason(bavaro('2026-12-15', '12:00'), overlap, TZ)?.slug).toBe('b');
   });
 });
+
+describe('daypart', () => {
+  it('splits the day the way the hero changes', async () => {
+    const { daypart } = await import('./schedule');
+    expect(daypart(bavaro('2026-10-20', '08:00'), TZ)).toBe('morning');
+    expect(daypart(bavaro('2026-10-20', '11:00'), TZ)).toBe('midday');
+    expect(daypart(bavaro('2026-10-20', '17:00'), TZ)).toBe('sunset');
+    expect(daypart(bavaro('2026-10-20', '19:30'), TZ)).toBe('night');
+    expect(daypart(bavaro('2026-10-21', '02:00'), TZ)).toBe('night');
+    expect(daypart(bavaro('2026-10-21', '05:00'), TZ)).toBe('morning');
+  });
+});

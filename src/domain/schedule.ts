@@ -134,3 +134,18 @@ export function activeSeason<T extends Season>(now: Date, seasons: readonly T[],
     .filter((s) => s.published && s.startsOn <= date && date <= s.endsOn)
     .sort((a, b) => b.priority - a.priority || b.startsOn.localeCompare(a.startsOn))[0];
 }
+
+export type Daypart = 'morning' | 'midday' | 'sunset' | 'night';
+
+/**
+ * Which face the facade hero shows. Sunset is the happy-hour stretch; the
+ * terrace lights come on at 19:30 — sunset in Bávaro is around 18:30 all
+ * year, and the string lights read best once the sky has gone.
+ */
+export function daypart(now: Date, timeZone: string): Daypart {
+  const m = localNow(now, timeZone).minutes;
+  if (m >= 5 * 60 && m < 11 * 60) return 'morning';
+  if (m >= 11 * 60 && m < 17 * 60) return 'midday';
+  if (m >= 17 * 60 && m < 19 * 60 + 30) return 'sunset';
+  return 'night';
+}

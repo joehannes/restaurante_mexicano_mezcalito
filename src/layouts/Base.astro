@@ -40,6 +40,7 @@ const skin = Object.entries(tokens)
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta name="theme-color" content="#141210" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {skin && <style is:inline set:html={`:root{${skin}}`} />}
     <slot name="head" />
   </head>

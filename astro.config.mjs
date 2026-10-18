@@ -12,6 +12,7 @@ export default defineConfig({
   // runs locally (D1, KV, R2, the Durable Object) and AI calls fail cleanly.
   adapter: cloudflare({ remoteBindings: !!process.env.CLOUDFLARE_API_TOKEN }),
   integrations: [react()],
+  devToolbar: { enabled: false },
   vite: {
     plugins: [tailwindcss()],
   },

@@ -51,3 +51,65 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Texture ──────────────────────────────────────────────────────────── */
+
+/* Papel picado: a row of cut-paper flags, drawn with gradients only. */
+.papel-picado {
+  background:
+    radial-gradient(circle at 50% 30%, var(--c-ink) 18%, transparent 19%) 0 0 / 28px 24px,
+    conic-gradient(from -45deg at 50% 100%, transparent 0 90deg, var(--c-ink) 0) 0 0 / 28px 24px,
+    repeating-linear-gradient(90deg, var(--c-hibiscus) 0 28px, var(--c-gold) 28px 56px, var(--c-jungle) 56px 84px, var(--c-lagoon) 84px 112px);
+}
+
+/* Halftone dots, for flyers. */
+.halftone {
+  background-image: radial-gradient(color-mix(in srgb, currentColor 22%, transparent) 1.2px, transparent 1.4px);
+  background-size: 9px 9px;
+}
+
+/* A painted sticker: rotated, outlined, a little proud of the page. */
+.sticker {
+  display: inline-block;
+  transform: rotate(var(--tilt, -6deg));
+  border: 3px solid var(--c-ink);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0 var(--c-ink);
+}
+
+/* ── Motion: transform and opacity only ───────────────────────────────── */
+
+@keyframes pulse-dot {
+  50% { opacity: 0.35; }
+}
+@keyframes cone {
+  0%, 100% { transform: scale(1); }
+  12% { transform: scale(1.06); }
+  24% { transform: scale(1); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes bounce-in {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* The primary call to action beats like a speaker cone. */
+.cone {
+  animation: cone 2.4s ease-in-out infinite;
+}
+.cone:hover,
+.cone:focus-visible {
+  animation-play-state: paused;
+}

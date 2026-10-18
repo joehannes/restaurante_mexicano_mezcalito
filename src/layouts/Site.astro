@@ -1,0 +1,29 @@
+---
+/**
+ * A public page: the season-skinned frame plus the fascia header, the phone
+ * thumb bar and the footer.
+ */
+import Base from './Base.astro';
+import BottomBar from '../components/BottomBar.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import type { PageContext } from '../server/page';
+
+interface Props {
+  ctx: PageContext;
+  title: string;
+  description: string;
+  /** Path after the locale, e.g. `/menu`. */
+  path: string;
+}
+const { ctx, title, description, path } = Astro.props;
+---
+<Base locale={ctx.locale} title={title} description={description} path={path} tokens={ctx.season?.tokens}>
+  <slot name="head" slot="head" />
+  <Header locale={ctx.locale} path={path} />
+  <main id="main">
+    <slot />
+  </main>
+  <Footer ctx={ctx} />
+  <BottomBar locale={ctx.locale} path={path} />
+</Base>
