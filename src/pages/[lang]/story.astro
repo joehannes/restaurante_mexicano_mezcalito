@@ -1,0 +1,52 @@
+---
+/**
+ * Our story: the One Love mission in Mezcalito's own words, and the two
+ * ideas the whole site is built on — jamaica the flower, and the sound system.
+ */
+import Site from '../../layouts/Site.astro';
+import { t } from '../../i18n/ui';
+import { href, notFound, pageContext } from '../../server/page';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale } = ctx;
+---
+<Site ctx={ctx} path="/story" title={`${t(locale, 'story.title')} — Mezcalito Bar & Grill`} description={t(locale, 'story.p1')}>
+  <section class="relative overflow-hidden bg-ink text-cream">
+    <div class="split absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-4xl px-4 py-16 md:py-24">
+      <p class="font-display text-gold uppercase">{t(locale, 'brand.slogan')}</p>
+      <h1 class="mt-2 font-display text-5xl leading-[0.95] uppercase md:text-7xl">{t(locale, 'story.lead')}</h1>
+    </div>
+  </section>
+
+  <article class="mx-auto max-w-3xl space-y-6 px-4 pt-12 text-lg leading-relaxed">
+    <p class="text-xl font-semibold">{t(locale, 'story.p1')}</p>
+    <p>{t(locale, 'story.p2')}</p>
+    <p>{t(locale, 'story.p3')}</p>
+  </article>
+
+  <section class="mx-auto mt-14 grid max-w-5xl gap-6 px-4 md:grid-cols-2">
+    <div class="halftone rounded-2xl bg-hibiscus p-6 text-cream shadow-[6px_6px_0_var(--c-ink)]">
+      <h2 class="font-display text-3xl uppercase">{t(locale, 'story.bridgeTitle')}</h2>
+      <p class="mt-3">{t(locale, 'story.bridge')}</p>
+    </div>
+    <div class="halftone rounded-2xl bg-jungle p-6 text-gold shadow-[6px_6px_0_var(--c-ink)]">
+      <h2 class="font-display text-3xl uppercase">{t(locale, 'story.soundTitle')}</h2>
+      <p class="mt-3 text-cream">{t(locale, 'story.sound')}</p>
+    </div>
+  </section>
+
+  <p class="mx-auto mt-12 flex max-w-5xl flex-wrap gap-3 px-4">
+    <a href={href(locale, '/menu')} class="cone rounded-full bg-hibiscus px-6 py-3 font-bold text-cream">{t(locale, 'home.fullMenu')}</a>
+    <a href={href(locale, '/reserve')} class="rounded-full bg-ink px-6 py-3 font-bold text-cream">{t(locale, 'nav.bookTable')}</a>
+  </p>
+</Site>
+
+<style>
+  /* The logo's split: the Jamaican half and the Mexican half, on a diagonal. */
+  .split {
+    background: linear-gradient(115deg, var(--c-jungle) 0 38%, var(--c-gold) 38% 42%, var(--c-ink) 42% 58%, var(--c-sunset) 58% 62%, var(--c-hibiscus) 62%);
+    opacity: 0.35;
+  }
+</style>

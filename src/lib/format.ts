@@ -36,3 +36,6 @@ export function formatClock(time: ClockTime, locale: Locale): string {
   const h12 = hour % 12 || 12;
   return `${h12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${hour < 12 ? 'am' : 'pm'}`;
 }
+
+/** "+18099591646" → "+1 809-959-1646"; other numbers are left as stored. */
+export const formatPhone = (e164: string) => e164.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, '+1 $1-$2-$3');

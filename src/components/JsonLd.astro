@@ -1,0 +1,8 @@
+---
+/** Structured data for search engines, escaped so no text can close the script. */
+interface Props {
+  data: unknown;
+}
+const json = JSON.stringify(Astro.props.data).replace(/</g, '\\u003c');
+---
+<script is:inline type="application/ld+json" set:html={json} />

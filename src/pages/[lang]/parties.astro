@@ -1,0 +1,35 @@
+---
+import Site from '../../layouts/Site.astro';
+import Parties from '../../islands/Parties';
+import { dictionary, t } from '../../i18n/ui';
+import { formatPhone } from '../../lib/format';
+import { notFound, pageContext } from '../../server/page';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale, site } = ctx;
+const wa = `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(t(locale, 'parties.title'))}`;
+const offers = ['parties.what.birthday', 'parties.what.groups', 'parties.what.catering'] as const;
+---
+<Site ctx={ctx} path="/parties" title={`${t(locale, 'parties.title')} — Mezcalito, Bávaro`} description={t(locale, 'parties.intro')}>
+  <div class="mx-auto max-w-3xl px-4 pt-8">
+    <h1 class="font-display text-5xl uppercase md:text-6xl">{t(locale, 'parties.title')}</h1>
+    <p class="mt-3 text-lg">{t(locale, 'parties.intro')}</p>
+    <ul class="mt-6 grid gap-3 sm:grid-cols-3">
+      {offers.map((key, i) => (
+        <li class:list={['rounded-2xl p-4 font-semibold shadow-[4px_4px_0_var(--c-ink)]', ['bg-gold', 'bg-lagoon', 'bg-hibiscus text-cream'][i]]}>
+          {t(locale, key)}
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <section class="mx-auto mt-12 max-w-3xl px-4 pb-10" aria-labelledby="request">
+    <h2 id="request" class="mb-6 font-display text-4xl uppercase">{t(locale, 'parties.formTitle')}</h2>
+    <Parties client:visible locale={locale} dict={dictionary(locale)} today={ctx.today} />
+    <p class="mt-8">
+      {t(locale, 'parties.or')}:{' '}
+      <a href={wa} class="font-bold whitespace-nowrap underline">WhatsApp {formatPhone(site.contact.whatsapp)}</a>
+    </p>
+  </section>
+</Site>

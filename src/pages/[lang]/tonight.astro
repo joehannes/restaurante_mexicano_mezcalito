@@ -1,0 +1,96 @@
+---
+/**
+ * Tonight & this week: the flyer wall. Today first — what is on now, what is
+ * coming later, what already ran — then the six days after, each with its
+ * own flyers. Every night is also published to search engines as an Event.
+ */
+import Site from '../../layouts/Site.astro';
+import FlyerCard from '../../components/FlyerCard.astro';
+import JsonLd from '../../components/JsonLd.astro';
+import { activeSpecials, addDays, localNow, occurrences, parseClock, specialsOn } from '../../domain/schedule';
+import { localized } from '../../domain/types';
+import { formatClock } from '../../lib/format';
+import { eventJsonLd } from '../../lib/seo';
+import { longDate, t } from '../../i18n/ui';
+import { notFound, pageContext } from '../../server/page';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale, site, today } = ctx;
+
+const live = activeSpecials(ctx.now, ctx.specials, ctx.tz);
+const minutes = localNow(ctx.now, ctx.tz).minutes;
+const todays = specialsOn(today, ctx.specials);
+const later = todays.filter((s) => !live.includes(s) && parseClock(s.start) > minutes);
+const earlier = todays.filter((s) => !live.includes(s) && !later.includes(s));
+// Every-day offers are listed once above the week rather than on each day.
+const daily = ctx.specials.filter((s) => s.active && !s.days.length);
+const week = Array.from({ length: 6 }, (_, i) => addDays(today, i + 1)).map((date) => ({
+  date,
+  specials: specialsOn(date, ctx.specials).filter((s) => s.days.length),
+}));
+
+const origin = Astro.site!.origin;
+const events = ctx.specials.filter((s) => s.active).flatMap((s) => eventJsonLd(s, occurrences(s, today, 7), site, origin, locale));
+let index = 0;
+---
+<Site ctx={ctx} path="/tonight" title={`${t(locale, 'tonight.title')} — Mezcalito, Bávaro`} description={t(locale, 'tonight.intro')}>
+  <JsonLd slot="head" data={events} />
+  <div class="mx-auto max-w-6xl px-4 pt-8">
+    <h1 class="font-display text-5xl uppercase md:text-6xl">{t(locale, 'tonight.title')}</h1>
+    <p class="mt-2 max-w-2xl">{t(locale, 'tonight.intro')}</p>
+  </div>
+
+  <section class="mt-8 bg-ink py-10 text-cream" aria-labelledby="today">
+    <div class="mx-auto max-w-6xl px-4">
+      <h2 id="today" class="font-display text-3xl text-gold uppercase">{t(locale, 'day.todayShort')} · {longDate(today, locale)}</h2>
+      {todays.length === 0 && <p class="mt-4">{t(locale, 'tonight.quietDay')}</p>}
+      {[
+        [live, 'tonight.now'],
+        [later, 'tonight.later'],
+        [earlier, 'tonight.earlier'],
+      ].map(([group, label]) =>
+        (group as typeof live).length > 0 && (
+          <div class="mt-6">
+            <h3 class="text-sm font-bold tracking-[0.18em] uppercase opacity-80">{t(locale, label as 'tonight.now')}</h3>
+            <div class="mt-4 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {(group as typeof live).map((s) => (
+                <div class:list={[label === 'tonight.earlier' && 'opacity-60']}>
+                  <FlyerCard special={s} locale={locale} index={index++} live={label === 'tonight.now'} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ),
+      )}
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-12" aria-labelledby="week">
+    <h2 id="week" class="font-display text-4xl uppercase">{t(locale, 'tonight.week')}</h2>
+    {daily.length > 0 && (
+      <p class="mt-3 flex flex-wrap gap-2">
+        <span class="font-bold">{t(locale, 'tonight.everyDay')}:</span>
+        {daily.map((s) => (
+          <span class="rounded-full bg-gold px-3 text-sm font-semibold leading-6">
+            {localized(s.title, locale)} · {formatClock(s.start, locale)}–{formatClock(s.end, locale)}
+          </span>
+        ))}
+      </p>
+    )}
+    <ol class="mt-6 space-y-10">
+      {week.map(({ date, specials }) => (
+        <li>
+          <h3 class="border-b-2 border-ink pb-1 font-display text-2xl uppercase">{longDate(date, locale)}</h3>
+          {specials.length ? (
+            <div class="mt-5 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {specials.map((s) => <FlyerCard special={s} locale={locale} index={index++} />)}
+            </div>
+          ) : (
+            <p class="mt-3 text-ink/70">{t(locale, 'tonight.quietDay')}</p>
+          )}
+        </li>
+      ))}
+    </ol>
+  </section>
+</Site>

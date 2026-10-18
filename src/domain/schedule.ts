@@ -114,10 +114,10 @@ const runsOn = (special: Special, date: string) =>
   (!special.days.length || special.days.includes(weekdayOf(date)));
 
 /** The line-up for a day: specials that start that day. */
-export const specialsOn = (date: string, specials: readonly Special[]) => specials.filter((s) => runsOn(s, date));
+export const specialsOn = <T extends Special>(date: string, specials: readonly T[]): T[] => specials.filter((s) => runsOn(s, date));
 
 /** Specials running at this moment, including overnight ones that began yesterday. */
-export function activeSpecials(now: Date, specials: readonly Special[], timeZone: string): Special[] {
+export function activeSpecials<T extends Special>(now: Date, specials: readonly T[], timeZone: string): T[] {
   const { date, minutes } = localNow(now, timeZone);
   const yesterday = addDays(date, -1);
   return specials.filter((special) => {

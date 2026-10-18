@@ -4,9 +4,11 @@ import Site from '../../layouts/Site.astro';
 import Hero from '../../components/Hero.astro';
 import FlyerCard from '../../components/FlyerCard.astro';
 import DishSingle from '../../components/DishSingle.astro';
+import JsonLd from '../../components/JsonLd.astro';
 import { activeSpecials, parseClock, specialsOn, localNow } from '../../domain/schedule';
 import { localized } from '../../domain/types';
 import { formatClock } from '../../lib/format';
+import { restaurantJsonLd } from '../../lib/seo';
 import { t } from '../../i18n/ui';
 import { loadMenu } from '../../server/menu';
 import { href, notFound, pageContext } from '../../server/page';
@@ -30,6 +32,7 @@ const maps = `https://www.google.com/maps/search/?api=1&query=${site.address.lat
   title={`Mezcalito Bar & Grill — ${t(locale, 'brand.tagline')} · Bávaro, Punta Cana`}
   description={`${t(locale, 'brand.tagline')} ${t(locale, 'brand.place')}. ${t(locale, 'home.howItWorks')}`}
 >
+  <JsonLd slot="head" data={restaurantJsonLd(site, Astro.site!.origin, locale)} />
   <Hero ctx={ctx} />
 
   {(live.length > 0 || later.length > 0) && (

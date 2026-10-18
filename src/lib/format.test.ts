@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatClock, formatPrice, formatUsd } from './format';
+import { formatClock, formatPhone, formatPrice, formatUsd } from './format';
 
 describe('formatPrice', () => {
   it('shows whole pesos without decimals and keeps centavos when there are any', () => {
@@ -29,5 +29,12 @@ describe('formatClock', () => {
     expect(formatClock('17:30', 'es')).toBe('17:30');
     expect(formatClock('24:00', 'de')).toBe('24:00');
     expect(formatClock('00:30', 'es')).toBe('00:30');
+  });
+});
+
+describe('formatPhone', () => {
+  it('writes North American numbers the way they are dialled here', () => {
+    expect(formatPhone('+18099591646')).toBe('+1 809-959-1646');
+    expect(formatPhone('+4915112345678')).toBe('+4915112345678');
   });
 });
