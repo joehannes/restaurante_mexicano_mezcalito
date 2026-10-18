@@ -12,6 +12,7 @@ export const fr: Record<UiKey, string> = {
   'nav.language': 'Langue',
   'nav.home': 'Accueil',
   'nav.selector': 'The Selector',
+  'nav.radio': 'Mezcalito Radio',
 
   'status.open': 'Ouvert',
   'status.closes': 'jusqu’à {time}',
@@ -47,6 +48,7 @@ export const fr: Record<UiKey, string> = {
   'home.findUs': 'Nous trouver',
   'home.fullMenu': 'Voir tout le menu',
   'home.howItWorks': 'À emporter, en livraison ou à table — vous payez à la réception.',
+  'home.unsure': 'Tu ne sais pas quoi prendre ?',
 
   'tonight.title': 'Ce soir et cette semaine',
   'tonight.now': 'En ce moment',
@@ -297,6 +299,21 @@ export const fr: Record<UiKey, string> = {
   'selector.why.popular': 'ce que les clients commandent le plus',
   'selector.why.tonight': 'dans l’offre du jour',
   'selector.why.pairs': 'va avec l’assiette',
+
+  'radio.title': 'Mezcalito Radio',
+  'radio.intro': 'Quelques questions, lues sur un riddim, puis ton assiette. Réponds en touchant — ou à voix haute.',
+  'radio.start': 'Écouter (avec le son)',
+  'radio.startQuiet': 'Juste lire',
+  'radio.question': 'Question {n}',
+  'radio.skip': 'Passer à mon assiette',
+  'radio.mic': 'Répondre à voix haute',
+  'radio.listening': 'J’écoute…',
+  'radio.notCaught': 'Je n’ai pas compris — touche ta réponse.',
+  'radio.mute': 'Couper la musique',
+  'radio.unmute': 'Remettre la musique',
+  'radio.again': 'Rejouer',
+  'radio.plate': 'Voilà ton assiette',
+  'radio.popular': 'le plus choisi',
 
   'common.back': 'Retour',
   'common.continue': 'Continuer',

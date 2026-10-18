@@ -9,6 +9,7 @@
  */
 import type { ClockTime, Localized, TimeRange } from '../src/domain/types';
 import type { ReservationRules } from '../src/domain/capacity';
+import type { RadioNode } from '../src/domain/radioTree';
 import { draftFromPreset, type SeasonDraft } from '../src/domain/seasonPresets.ts';
 
 const L = (en: string, es: string, fr: string, de: string): Localized => ({ en, es, fr, de });
@@ -718,4 +719,79 @@ export const settings = {
     windows: daily('12:00', '22:00'),
     overrides: [],
   } satisfies ReservationRules,
+  // No licensed music bed yet: the Radio plays its own synthesized riddim.
+  radio: { bed: null as string | null },
 };
+
+// ── Mezcalito Radio ─────────────────────────────────────────────────────────
+// The spoken path: a welcome, a branch for celebrations, then island, heat,
+// land or sea, and the wallet. Answers carry Selector preferences.
+
+export const radio: RadioNode[] = [
+  {
+    id: 'start',
+    prompt: L(
+      'Welcome to Mezcalito Radio — I’m your selector tonight. What brings you in?',
+      'Bienvenido a Mezcalito Radio — esta noche soy tu selector. ¿Qué te trae por aquí?',
+      'Bienvenue sur Mezcalito Radio — ce soir, je suis ton selector. Qu’est-ce qui t’amène ?',
+      'Willkommen bei Mezcalito Radio — heute Abend bin ich dein Selector. Was führt dich her?',
+    ),
+    options: [
+      { id: 'hungry', label: L('I’m hungry', 'Tengo hambre', 'J’ai faim', 'Ich hab Hunger'), next: 'side', traits: { hunger: 'meal' } },
+      { id: 'snack', label: L('Just a bite', 'Solo picar algo', 'Juste grignoter', 'Nur eine Kleinigkeit'), next: 'side', traits: { hunger: 'snack' } },
+      { id: 'celebrate', label: L('We’re celebrating', 'Estamos celebrando', 'On fait la fête', 'Wir feiern'), next: 'crew', traits: { hunger: 'feast' } },
+      { id: 'curious', label: L('First time here', 'Primera vez aquí', 'Première fois ici', 'Zum ersten Mal hier'), next: 'side', traits: { hunger: 'meal', firstTime: true } },
+    ],
+  },
+  {
+    id: 'crew',
+    prompt: L('A celebration! How big is the crew?', '¡Una celebración! ¿Cuántos son?', 'Une fête ! Vous êtes combien ?', 'Eine Feier! Wie groß ist die Crew?'),
+    options: [
+      { id: 'two', label: L('Just the two of us', 'Solo nosotros dos', 'Juste nous deux', 'Nur wir zwei'), next: 'side', traits: { party: 2 } },
+      { id: 'small', label: L('Three to six', 'De tres a seis', 'De trois à six', 'Drei bis sechs'), next: 'side', traits: { party: 4 } },
+      { id: 'big', label: L('The whole squad', 'Todo el grupo', 'Toute la bande', 'Die ganze Truppe'), next: 'side', traits: { party: 8 } },
+    ],
+  },
+  {
+    id: 'side',
+    prompt: L(
+      'Which side of the island are you on today — Jamaica, México, or both?',
+      '¿De qué lado de la isla estás hoy — Jamaica, México o los dos?',
+      'De quel côté de l’île es-tu aujourd’hui — Jamaïque, Mexique, ou les deux ?',
+      'Auf welcher Seite der Insel bist du heute — Jamaika, Mexiko oder beides?',
+    ),
+    options: [
+      { id: 'ja', label: L('Jamaica', 'Jamaica', 'Jamaïque', 'Jamaika'), next: 'heat', traits: { leaning: 'ja' } },
+      { id: 'mx', label: L('México', 'México', 'Mexique', 'Mexiko'), next: 'heat', traits: { leaning: 'mx' } },
+      { id: 'both', label: L('Both', 'Los dos', 'Les deux', 'Beides'), next: 'heat', traits: { leaning: 'both' } },
+    ],
+  },
+  {
+    id: 'heat',
+    prompt: L('How much heat can you take?', '¿Cuánto picante aguantas?', 'Tu supportes combien de piquant ?', 'Wie viel Schärfe verträgst du?'),
+    options: [
+      { id: 'mild', label: L('Keep it gentle', 'Suavecito', 'Tout doux', 'Lieber mild'), next: 'sea', traits: { heat: 'mild' } },
+      { id: 'medium', label: L('A little kick', 'Un poquito', 'Un peu relevé', 'Ein bisschen Feuer'), next: 'sea', traits: { heat: 'medium' } },
+      { id: 'hot', label: L('Scotch bonnet, please', 'Scotch bonnet, por favor', 'Scotch bonnet, s’il te plaît', 'Scotch Bonnet, bitte'), next: 'sea', traits: { heat: 'hot' } },
+    ],
+  },
+  {
+    id: 'sea',
+    prompt: L('Land or sea?', '¿Tierra o mar?', 'Terre ou mer ?', 'Land oder Meer?'),
+    options: [
+      { id: 'land', label: L('Land', 'Tierra', 'Terre', 'Land'), next: 'wallet', traits: { diet: ['no-seafood'] } },
+      { id: 'sea', label: L('Sea', 'Mar', 'Mer', 'Meer'), next: 'wallet', traits: { diet: ['seafood'] } },
+      { id: 'veg', label: L('No meat for me', 'Sin carne', 'Pas de viande', 'Kein Fleisch'), next: 'wallet', traits: { diet: ['vegetarian'] } },
+      { id: 'any', label: L('Surprise me', 'Sorpréndeme', 'Surprends-moi', 'Überrasch mich'), next: 'wallet', traits: {} },
+    ],
+  },
+  {
+    id: 'wallet',
+    prompt: L('Last one — how’s the wallet tonight?', 'La última — ¿cómo anda el bolsillo hoy?', 'Dernière question — et le portefeuille, ce soir ?', 'Letzte Frage — wie sieht’s heute mit dem Geldbeutel aus?'),
+    options: [
+      { id: 'easy', label: L('Easy on it', 'Tranquilo', 'Doucement', 'Lieber sparsam'), traits: { budget: rd(600) } },
+      { id: 'normal', label: L('Normal night', 'Una noche normal', 'Soirée normale', 'Ein normaler Abend'), traits: { budget: rd(1000) } },
+      { id: 'treat', label: L('Treat me', 'Date el gusto', 'Fais-moi plaisir', 'Gönn dir'), traits: {} },
+    ],
+  },
+];

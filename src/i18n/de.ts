@@ -12,6 +12,7 @@ export const de: Record<UiKey, string> = {
   'nav.language': 'Sprache',
   'nav.home': 'Start',
   'nav.selector': 'The Selector',
+  'nav.radio': 'Mezcalito Radio',
 
   'status.open': 'Jetzt geöffnet',
   'status.closes': 'bis {time}',
@@ -47,6 +48,7 @@ export const de: Record<UiKey, string> = {
   'home.findUs': 'Anfahrt',
   'home.fullMenu': 'Die ganze Speisekarte',
   'home.howItWorks': 'Zum Abholen, geliefert oder an deinen Tisch — bezahlt wird bei Übergabe.',
+  'home.unsure': 'Keine Ahnung, was du essen willst?',
 
   'tonight.title': 'Heute Abend & diese Woche',
   'tonight.now': 'Jetzt',
@@ -297,6 +299,21 @@ export const de: Record<UiKey, string> = {
   'selector.why.popular': 'was Gäste am häufigsten bestellen',
   'selector.why.tonight': 'im heutigen Angebot',
   'selector.why.pairs': 'passt zum Teller',
+
+  'radio.title': 'Mezcalito Radio',
+  'radio.intro': 'Ein paar Fragen, vorgelesen über einem Riddim, dann dein Teller. Antworte per Tippen — oder laut.',
+  'radio.start': 'Einschalten (mit Ton)',
+  'radio.startQuiet': 'Lieber lesen',
+  'radio.question': 'Frage {n}',
+  'radio.skip': 'Direkt zu meinem Teller',
+  'radio.mic': 'Laut antworten',
+  'radio.listening': 'Ich höre zu…',
+  'radio.notCaught': 'Nicht verstanden — tipp deine Antwort an.',
+  'radio.mute': 'Musik aus',
+  'radio.unmute': 'Musik an',
+  'radio.again': 'Nochmal',
+  'radio.plate': 'Hier ist dein Teller',
+  'radio.popular': 'am häufigsten gewählt',
 
   'common.back': 'Zurück',
   'common.continue': 'Weiter',

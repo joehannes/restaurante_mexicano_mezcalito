@@ -1,0 +1,51 @@
+---
+import { env } from 'cloudflare:workers';
+import Site from '../../layouts/Site.astro';
+import Radio, { type RadioQuestion } from '../../islands/Radio';
+import { byPopularity } from '../../domain/radioTree';
+import { localized } from '../../domain/types';
+import { dictionary, t } from '../../i18n/ui';
+import { loadMenu } from '../../server/menu';
+import { href, notFound, pageContext } from '../../server/page';
+import { loadRadio, voiceUrl } from '../../server/radio';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale, site } = ctx;
+const [{ nodes, counts }, menu, setting] = await Promise.all([
+  loadRadio(env.DB),
+  loadMenu(env.DB),
+  env.DB.prepare("SELECT value FROM settings WHERE key = 'radio'").first<{ value: string }>(),
+]);
+const questions: RadioQuestion[] = await Promise.all(
+  nodes.map(async (n) => {
+    const tally = counts.get(n.id);
+    const ordered = byPopularity(n.options, tally);
+    // "Most chosen" only once a question has a real crowd behind it.
+    const total = [...(tally?.values() ?? [])].reduce((a, b) => a + b, 0);
+    return {
+      id: n.id,
+      prompt: localized(n.prompt, locale),
+      options: ordered.map((o, i) => ({ id: o.id, label: localized(o.label, locale), next: o.next, popular: i === 0 && total >= 20 })),
+      voice: await voiceUrl(n, locale),
+    };
+  }),
+);
+const bed = setting ? (JSON.parse(setting.value) as { bed: string | null }).bed : null;
+---
+<Site ctx={ctx} path="/radio" title={`${t(locale, 'radio.title')} — Mezcalito`} description={t(locale, 'radio.intro')}>
+  <div class="mx-auto max-w-3xl px-4 pt-8 pb-6">
+    <h1 class="font-display text-5xl uppercase md:text-6xl">📻 {t(locale, 'radio.title')}</h1>
+  </div>
+  <Radio
+    client:load
+    locale={locale}
+    dict={dictionary(locale)}
+    questions={questions}
+    bed={bed}
+    menu={menu.filter((i) => !i.hidden)}
+    pricing={site.pricing}
+    menuHref={href(locale, '/menu')}
+    checkoutHref={href(locale, '/checkout')}
+  />
+</Site>

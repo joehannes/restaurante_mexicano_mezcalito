@@ -2,7 +2,7 @@
  * seed/data.ts as table rows, in display order. Shared by the SQL generator
  * and the test that checks every seeded dish can actually be ordered.
  */
-import { categories, groups, items, seasons, settings, specials } from './data.ts';
+import { categories, groups, items, radio, seasons, settings, specials } from './data.ts';
 
 export function seedRows() {
   return {
@@ -54,5 +54,6 @@ export function seedRows() {
       blocks: s.blocks,
     })),
     settings: Object.entries(settings).map(([key, value]) => ({ key, value })),
+    radio_nodes: radio.map((n, position) => ({ id: n.id, prompt: n.prompt, options: n.options, position })),
   };
 }

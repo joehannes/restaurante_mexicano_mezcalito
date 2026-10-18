@@ -76,7 +76,7 @@ function prompt(menu: MenuItem[], prefs: Preferences, ctx: Context, locale: Loca
         `Menu (id | name | category | price | heat | side | tags):\n${lines}\n\n` +
         `Pick ${shape}, plus one drink from the drinks category.\n` +
         `Guest: heat ${prefs.heat}; leaning ${{ ja: 'Jamaican', mx: 'Mexican', both: 'the fusion' }[prefs.leaning]}; ` +
-        `${prefs.budget ? `at most RD$${prefs.budget / 100} ${prefs.hunger === 'meal' ? 'per dish' : 'for all three'}; ` : ''}` +
+        `${prefs.budget ? `at most RD$${prefs.hunger === 'meal' ? `${prefs.budget / 100} per dish` : `${(prefs.budget * prefs.party) / 100} for all three together`}; ` : ''}` +
         `${prefs.diet.length ? `diet: ${prefs.diet.join(', ')}; ` : ''}${prefs.firstTime ? 'first time trying Jamaican food; ' : ''}party of ${prefs.party}.` +
         (wish ? `\nGuest wish: """${wish}"""` : ''),
     },

@@ -375,6 +375,10 @@ const parseReviews = (v: unknown) =>
     ? { rating: v.rating, count: v.count, source: text(v.source, 30), asOf: text(v.asOf, 7) }
     : undefined;
 
+/** The Radio's music bed: an uploaded, licensed mp3, or none for the built-in riddim. */
+const parseRadio = (v: unknown) =>
+  isObject(v) && (v.bed === null || (typeof v.bed === 'string' && /^\/media\/radio\/[\w-]{1,80}\.mp3$/.test(v.bed))) ? { bed: v.bed as string | null } : undefined;
+
 const SETTINGS = {
   hours: parseHours,
   closures: parseClosures,
@@ -385,6 +389,7 @@ const SETTINGS = {
   pricing: parsePricing,
   deliveryZones: parseZones,
   reservations: parseRules,
+  radio: parseRadio,
 } satisfies Record<string, (v: unknown) => unknown>;
 
 export type SettingKey = keyof typeof SETTINGS;

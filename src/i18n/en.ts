@@ -11,6 +11,7 @@ export const en = {
   'nav.language': 'Language',
   'nav.home': 'Home',
   'nav.selector': 'The Selector',
+  'nav.radio': 'Mezcalito Radio',
 
   'status.open': 'Open now',
   'status.closes': 'until {time}',
@@ -46,6 +47,7 @@ export const en = {
   'home.findUs': 'Find us',
   'home.fullMenu': 'See the full menu',
   'home.howItWorks': 'Order for pickup, delivery or at your table — pay when it reaches you.',
+  'home.unsure': 'Not sure what to eat?',
 
   'tonight.title': 'Tonight & this week',
   'tonight.now': 'On now',
@@ -296,6 +298,21 @@ export const en = {
   'selector.why.popular': 'what guests order most',
   'selector.why.tonight': 'on tonight’s offer',
   'selector.why.pairs': 'goes with the plate',
+
+  'radio.title': 'Mezcalito Radio',
+  'radio.intro': 'A few questions, read out over a riddim, then your plate. Answer by tapping — or out loud.',
+  'radio.start': 'Tune in (sound on)',
+  'radio.startQuiet': 'Read it instead',
+  'radio.question': 'Question {n}',
+  'radio.skip': 'Skip to my plate',
+  'radio.mic': 'Answer out loud',
+  'radio.listening': 'Listening…',
+  'radio.notCaught': 'Didn’t catch that — tap your answer.',
+  'radio.mute': 'Music off',
+  'radio.unmute': 'Music on',
+  'radio.again': 'Play it again',
+  'radio.plate': 'Here’s your plate',
+  'radio.popular': 'most chosen',
 
   'common.back': 'Back',
   'common.continue': 'Continue',

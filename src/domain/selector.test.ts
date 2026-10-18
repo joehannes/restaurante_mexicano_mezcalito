@@ -37,9 +37,12 @@ describe('selectPlate', () => {
     const fusion = (l: Preferences['leaning']) => selectPlate(menu, { ...base, leaning: l }).picks.reduce((s, p) => s + byId.get(p.id)!.fusion, 0);
     expect(fusion('ja')).toBeLessThan(fusion('mx'));
   });
-  it('fits a shared budget across a snack, and each pick within a meal budget', () => {
-    const snack = selectPlate(menu, { ...base, hunger: 'snack', budget: 150_000 });
+  it('fits a shared plate within everyone’s budget together, and each meal pick within one person’s', () => {
+    const snack = selectPlate(menu, { ...base, hunger: 'snack', budget: 75_000, party: 2 });
+    expect(snack.picks).toHaveLength(3);
     expect(snack.picks.reduce((s, p) => s + priceOf(byId.get(p.id)!), 0)).toBeLessThanOrEqual(150_000);
+    const feast = selectPlate(menu, { ...base, hunger: 'feast', budget: 100_000, party: 8 });
+    expect(feast.picks).toHaveLength(3);
     for (const p of selectPlate(menu, { ...base, budget: 60_000 }).picks) expect(priceOf(byId.get(p.id)!)).toBeLessThanOrEqual(60_000);
   });
   it('lets what guests order, and tonight’s offers, tip the balance', () => {
@@ -71,6 +74,8 @@ describe('checkAiPlate', () => {
   });
   it('rejects a plate over budget and drops a drink that is not a drink', () => {
     expect(checkAiPlate(good, menu, { ...base, budget: 100_000 })).toBeUndefined();
+    expect(checkAiPlate(good, menu, { ...base, hunger: 'feast', budget: 100_000, party: 2 })).toBeUndefined();
+    expect(checkAiPlate(good, menu, { ...base, hunger: 'feast', budget: 100_000, party: 6 })).toBeDefined();
     expect(checkAiPlate({ ...good, drink: { id: 'wings', why: '' } }, menu, base)?.drink).toBeUndefined();
   });
 });

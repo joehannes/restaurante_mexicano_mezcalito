@@ -1,6 +1,6 @@
 /** Talking to /api/admin from the staff islands. */
 
-export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string; fields: string[] };
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string; fields: string[]; body: Record<string, unknown> };
 
 export async function api<T = unknown>(path: string, init: { method?: string; body?: unknown; form?: FormData } = {}): Promise<ApiResult<T>> {
   try {
@@ -12,9 +12,9 @@ export async function api<T = unknown>(path: string, init: { method?: string; bo
     });
     const data = (await response.json().catch(() => ({}))) as T & { error?: string; fields?: string[] };
     if (response.ok) return { ok: true, data };
-    return { ok: false, status: response.status, error: data.error ?? 'error', fields: data.fields ?? [] };
+    return { ok: false, status: response.status, error: data.error ?? 'error', fields: data.fields ?? [], body: data };
   } catch {
-    return { ok: false, status: 0, error: 'network', fields: [] };
+    return { ok: false, status: 0, error: 'network', fields: [], body: {} };
   }
 }
 

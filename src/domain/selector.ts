@@ -107,16 +107,18 @@ export function selectPlate(menu: readonly MenuItem[], prefs: Preferences, ctx: 
     .map((item) => ({ item, ...score(item, prefs, ctx) }))
     .sort((a, b) => b.score - a.score || priceOf(a.item) - priceOf(b.item) || a.item.id.localeCompare(b.item.id));
 
-  // A snack or a feast is eaten together, so the budget covers all three;
-  // for a meal the three are alternatives, so each must fit on its own.
+  // A snack or a feast is shared by the party, so everyone's budget covers
+  // all three together; for a meal the three are alternatives, so each must
+  // fit one person's budget on its own.
   const shared = prefs.hunger !== 'meal';
+  const limit = prefs.budget === undefined ? undefined : shared ? prefs.budget * prefs.party : prefs.budget;
   const picks: Pick[] = [];
   const used = new Set<string>();
   const categories = new Set<string>();
   let spent = 0;
   for (const course of SHAPES[prefs.hunger]) {
     const fits = (r: (typeof ranked)[number]) =>
-      !used.has(r.item.id) && course.includes(r.item.categoryId) && (prefs.budget === undefined || (shared ? spent : 0) + priceOf(r.item) <= prefs.budget);
+      !used.has(r.item.id) && course.includes(r.item.categoryId) && (limit === undefined || (shared ? spent : 0) + priceOf(r.item) <= limit);
     // Prefer a course from a category not yet on the plate, for variety.
     const choice = ranked.find((r) => fits(r) && !categories.has(r.item.categoryId)) ?? ranked.find(fits);
     if (!choice) continue;
@@ -168,7 +170,7 @@ export function checkAiPlate(raw: unknown, menu: readonly MenuItem[], prefs: Pre
   }
   if (prefs.budget !== undefined) {
     const prices = picks.map((p) => priceOf(byId.get(p.id)!));
-    const over = prefs.hunger === 'meal' ? prices.some((x) => x > prefs.budget!) : prices.reduce((a, b) => a + b, 0) > prefs.budget;
+    const over = prefs.hunger === 'meal' ? prices.some((x) => x > prefs.budget!) : prices.reduce((a, b) => a + b, 0) > prefs.budget * prefs.party;
     if (over) return undefined;
   }
   let drink: AiPlate['drink'];

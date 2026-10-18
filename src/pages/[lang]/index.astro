@@ -53,6 +53,11 @@ const maps = `https://www.google.com/maps/search/?api=1&query=${site.address.lat
       {signatures.map((item, i) => <DishSingle item={item} locale={locale} side={`${i % 2 ? 'B' : 'A'}${Math.floor(i / 2) + 1}`} />)}
     </div>
     <p class="mt-8"><a href={href(locale, '/menu')} class="font-bold underline">{t(locale, 'home.fullMenu')} →</a></p>
+    <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl bg-mezcal p-5 text-cream">
+      <p class="font-display text-2xl uppercase">{t(locale, 'home.unsure')}</p>
+      <a href={href(locale, '/selector')} class="rounded-full bg-gold px-5 py-2 font-bold text-ink">{t(locale, 'selector.title')} →</a>
+      <a href={href(locale, '/radio')} class="font-semibold underline">📻 {t(locale, 'radio.title')}</a>
+    </div>
   </section>
 
   <section class="mt-16 bg-ink py-14 text-cream" aria-labelledby="lineup">

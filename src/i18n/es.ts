@@ -12,6 +12,7 @@ export const es: Record<UiKey, string> = {
   'nav.language': 'Idioma',
   'nav.home': 'Inicio',
   'nav.selector': 'The Selector',
+  'nav.radio': 'Mezcalito Radio',
 
   'status.open': 'Abierto ahora',
   'status.closes': 'hasta las {time}',
@@ -47,6 +48,7 @@ export const es: Record<UiKey, string> = {
   'home.findUs': 'Cómo llegar',
   'home.fullMenu': 'Ver el menú completo',
   'home.howItWorks': 'Ordena para recoger, a domicilio o en tu mesa — pagas al recibir.',
+  'home.unsure': '¿No sabes qué pedir?',
 
   'tonight.title': 'Esta noche y esta semana',
   'tonight.now': 'Ahora',
@@ -297,6 +299,21 @@ export const es: Record<UiKey, string> = {
   'selector.why.popular': 'lo que más piden',
   'selector.why.tonight': 'en la oferta de hoy',
   'selector.why.pairs': 'va con el plato',
+
+  'radio.title': 'Mezcalito Radio',
+  'radio.intro': 'Unas preguntas, leídas sobre un riddim, y luego tu plato. Responde tocando — o en voz alta.',
+  'radio.start': 'Sintonizar (con sonido)',
+  'radio.startQuiet': 'Prefiero leer',
+  'radio.question': 'Pregunta {n}',
+  'radio.skip': 'Ir a mi plato',
+  'radio.mic': 'Responder en voz alta',
+  'radio.listening': 'Escuchando…',
+  'radio.notCaught': 'No te entendí — toca tu respuesta.',
+  'radio.mute': 'Quitar música',
+  'radio.unmute': 'Poner música',
+  'radio.again': 'Otra vez',
+  'radio.plate': 'Aquí está tu plato',
+  'radio.popular': 'lo más elegido',
 
   'common.back': 'Atrás',
   'common.continue': 'Continuar',

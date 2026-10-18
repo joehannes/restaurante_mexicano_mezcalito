@@ -1,0 +1,11 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import RadioAdmin from '../../islands/admin/RadioAdmin';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'radio');
+if (!page) return forbidden();
+---
+<Admin title={page.dict['radio.title']} section="/admin/radio">
+  <RadioAdmin client:load dict={page.dict} locale={page.locale} />
+</Admin>
