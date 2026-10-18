@@ -1,0 +1,37 @@
+---
+import { env } from 'cloudflare:workers';
+import Site from '../../layouts/Site.astro';
+import Reserve from '../../islands/Reserve';
+import { addDays } from '../../domain/schedule';
+import { dictionary, t } from '../../i18n/ui';
+import { loadRules } from '../../server/reservations';
+import { href, notFound, pageContext } from '../../server/page';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale, site } = ctx;
+const rules = await loadRules(env.DB);
+
+const INTL = { en: 'en-US', es: 'es-DO', fr: 'fr-FR', de: 'de-DE' } as const;
+const short = new Intl.DateTimeFormat(INTL[locale], { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const days = Array.from({ length: Math.min(rules.maxDaysAhead, 21) }, (_, i) => {
+  const date = addDays(ctx.today, i);
+  const label = i === 0 ? t(locale, 'day.todayShort') : short.format(new Date(`${date}T12:00:00Z`));
+  return { date, label };
+});
+---
+<Site ctx={ctx} path="/reserve" title={`${t(locale, 'reserve.title')} — Mezcalito, Bávaro`} description={t(locale, 'reserve.intro')}>
+  <div class="mx-auto max-w-2xl px-4 pt-8 pb-6">
+    <h1 class="font-display text-5xl uppercase">{t(locale, 'reserve.title')}</h1>
+    <p class="mt-2">{t(locale, 'reserve.intro')}</p>
+  </div>
+  <Reserve
+    client:load
+    locale={locale}
+    dict={dictionary(locale)}
+    days={days}
+    maxParty={rules.maxParty}
+    partiesHref={href(locale, '/parties')}
+    address={`Mezcalito Bar & Grill, ${site.address.street}, ${site.address.locality}`}
+  />
+</Site>
