@@ -1,0 +1,7 @@
+---
+// "/" sends each guest to their own language; search engines see the
+// alternates on every localized page.
+import { negotiate } from '../i18n/ui';
+
+return Astro.redirect(`/${negotiate(Astro.request.headers.get('accept-language'))}/`, 302);
+---

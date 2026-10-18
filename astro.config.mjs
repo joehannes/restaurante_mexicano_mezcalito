@@ -7,13 +7,11 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://mezcalitobarandgrill.com',
   output: 'server',
-  adapter: cloudflare(),
+  // Workers AI only runs on Cloudflare, so local dev reaches it through a
+  // remote proxy that needs an API token. Without one, everything else still
+  // runs locally (D1, KV, R2, the Durable Object) and AI calls fail cleanly.
+  adapter: cloudflare({ remoteBindings: !!process.env.CLOUDFLARE_API_TOKEN }),
   integrations: [react()],
-  i18n: {
-    locales: ['en', 'es', 'fr', 'de'],
-    defaultLocale: 'en',
-    routing: { prefixDefaultLocale: true, redirectToDefaultLocale: false },
-  },
   vite: {
     plugins: [tailwindcss()],
   },

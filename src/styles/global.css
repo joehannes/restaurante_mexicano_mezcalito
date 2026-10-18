@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+@import '@fontsource/anton/latin-400.css';
+@import '@fontsource-variable/dm-sans/index.css';
+
+/*
+ * The default skin: "Mezcalito Sound System".
+ *
+ * Every colour is a custom property so a season can re-skin the whole site
+ * at request time by overriding a handful of them in <head> — no rebuild.
+ * Utilities read the variables directly (`@theme inline`), so `bg-hibiscus`
+ * follows whatever the active season says hibiscus is.
+ */
+:root {
+  --c-ink: #141210;      /* speaker black */
+  --c-cream: #fbf3e4;    /* masa */
+  --c-gold: #f6b818;     /* Rasta gold / cempasúchil */
+  --c-hibiscus: #e5267a; /* rosa mexicano / agua de jamaica */
+  --c-jungle: #138a43;   /* Rasta green */
+  --c-sunset: #f2581d;   /* the wordmark's orange */
+  --c-lagoon: #12b3b8;   /* Caribbean turquoise */
+  --c-mezcal: #4b2a7a;   /* night, mezcal purple */
+}
+
+@theme inline {
+  --color-ink: var(--c-ink);
+  --color-cream: var(--c-cream);
+  --color-gold: var(--c-gold);
+  --color-hibiscus: var(--c-hibiscus);
+  --color-jungle: var(--c-jungle);
+  --color-sunset: var(--c-sunset);
+  --color-lagoon: var(--c-lagoon);
+  --color-mezcal: var(--c-mezcal);
+
+  --font-display: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+  --font-sans: 'DM Sans Variable', system-ui, sans-serif;
+}
+
+html {
+  background: var(--c-cream);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

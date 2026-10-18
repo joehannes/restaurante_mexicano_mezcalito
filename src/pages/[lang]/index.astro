@@ -1,0 +1,46 @@
+---
+import { env } from 'cloudflare:workers';
+import Base from '../../layouts/Base.astro';
+import { activeSeason, activeSpecials, openStatus } from '../../domain/schedule';
+import { localized } from '../../domain/types';
+import { isLocale, t } from '../../i18n/ui';
+import { loadSite } from '../../server/content';
+
+const { lang } = Astro.params;
+if (!isLocale(lang)) return new Response(null, { status: 404 });
+
+const now = new Date();
+const tz = env.TIMEZONE;
+const { site, specials, seasons } = await loadSite(env.DB);
+const status = openStatus(now, site.hours, site.closures, tz);
+const tonight = activeSpecials(now, specials, tz);
+const season = activeSeason(now, seasons, tz);
+---
+<Base
+  locale={lang}
+  title={`Mezcalito Bar & Grill — ${t(lang, 'tagline')} · Bávaro, Punta Cana`}
+  description={`${t(lang, 'tagline')}. ${t(lang, 'slogan')}`}
+  tokens={season?.tokens}
+>
+  <main class="mx-auto max-w-3xl px-4 py-10">
+    {season && <p class="font-display uppercase tracking-wide text-hibiscus">{localized(season.hero.kicker, lang)}</p>}
+    <h1 class="font-display text-6xl uppercase leading-none">Mezcalito</h1>
+    <p class="mt-2 text-lg">{t(lang, 'tagline')} · {t(lang, 'slogan')}</p>
+    <p class="mt-4 inline-block rounded-full bg-ink px-4 py-1 text-cream">
+      {status.open
+        ? `${t(lang, 'status.open')} · ${t(lang, 'status.closes', { time: status.closesAt.time })}`
+        : t(lang, 'status.closed')}
+    </p>
+    {season && <h2 class="mt-8 font-display text-4xl uppercase">{localized(season.hero.headline, lang)}</h2>}
+    <section class="mt-8">
+      <h2 class="font-display text-3xl uppercase">{t(lang, 'tonight.title')}</h2>
+      {tonight.length ? (
+        <ul class="mt-3 space-y-2">
+          {tonight.map((s) => <li class="rounded-lg bg-gold px-4 py-3 font-semibold">{localized(s.title, lang)}</li>)}
+        </ul>
+      ) : (
+        <p class="mt-3">{t(lang, 'tonight.empty')}</p>
+      )}
+    </section>
+  </main>
+</Base>

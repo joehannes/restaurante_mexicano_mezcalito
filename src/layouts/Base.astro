@@ -1,0 +1,49 @@
+---
+/**
+ * Every page's frame: language, alternates, and the active season's skin
+ * injected as CSS variables before first paint.
+ */
+import '../styles/global.css';
+import type { Locale } from '../domain/types';
+import { LOCALES } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  /** Path after the locale, e.g. `/menu`. */
+  path?: string;
+  /** CSS custom properties from the active season. */
+  tokens?: Record<string, string>;
+}
+
+const { locale, title, description, path = '/', tokens = {} } = Astro.props;
+const site = Astro.site!.origin;
+const suffix = path === '/' ? '/' : path;
+// Only well-formed custom properties with plain colour values reach the page.
+const skin = Object.entries(tokens)
+  .filter(([name, value]) => /^--c-[a-z]+$/.test(name) && /^#[0-9a-fA-F]{3,8}$/.test(value))
+  .map(([name, value]) => `${name}:${value}`)
+  .join(';');
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={`${site}/${locale}${suffix}`} />
+    {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={`${site}/${l}${suffix}`} />)}
+    <link rel="alternate" hreflang="x-default" href={`${site}/en${suffix}`} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#141210" />
+    {skin && <style is:inline set:html={`:root{${skin}}`} />}
+    <slot name="head" />
+  </head>
+  <body class="min-h-dvh antialiased">
+    <slot />
+  </body>
+</html>
