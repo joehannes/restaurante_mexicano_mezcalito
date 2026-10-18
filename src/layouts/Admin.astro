@@ -1,0 +1,80 @@
+---
+/**
+ * The staff frame: phone-first, plain, fast. A tab strip of the sections this
+ * person may use, the language switch, and nothing else in the way.
+ */
+import '../styles/global.css';
+import { can, type Permission } from '../domain/roles';
+import { adminDictionary, adminLocale, type AdminKey } from '../i18n/admin';
+
+interface Props {
+  title: string;
+  section: string;
+}
+const { title, section } = Astro.props;
+const staff = Astro.locals.staff!;
+const locale = adminLocale(Astro.request);
+const dict = adminDictionary(locale);
+
+const NAV: [string, AdminKey, Permission][] = [
+  ['/admin', 'nav.board', 'orders'],
+  ['/admin/menu', 'nav.menu', 'soldout'],
+  ['/admin/nights', 'nav.nights', 'nights'],
+  ['/admin/bookings', 'nav.bookings', 'reservations'],
+  ['/admin/seasons', 'nav.seasons', 'seasons'],
+  ['/admin/radio', 'nav.radio', 'radio'],
+  ['/admin/insights', 'nav.insights', 'insights'],
+  ['/admin/settings', 'nav.settings', 'settings'],
+  ['/admin/staff', 'nav.staff', 'staff'],
+];
+const nav = NAV.filter(([, , permission]) => can(staff.role, permission));
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <title>{title} · Mezcalito admin</title>
+    <meta name="theme-color" content="#141210" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="min-h-dvh bg-cream antialiased">
+    <header class="sticky top-0 z-40 bg-ink text-cream">
+      <div class="mx-auto flex h-12 max-w-6xl items-center gap-3 px-3">
+        <a href="/admin" class="font-display text-xl tracking-[0.12em] text-gold uppercase">Mezcalito</a>
+        <span class="truncate text-xs text-cream/60">{dict['nav.signedIn'].replace('{email}', staff.email)}</span>
+        <span class="ml-auto flex shrink-0 gap-1 text-xs font-bold" role="group" aria-label="Language">
+          {(['es', 'en'] as const).map((l) => (
+            <button type="button" data-lang={l} class:list={['rounded-full px-2 py-1 uppercase', l === locale ? 'bg-cream text-ink' : 'border border-cream/30']}>
+              {l}
+            </button>
+          ))}
+        </span>
+        <a href="/" class="shrink-0 text-xs underline">{dict['nav.site']}</a>
+      </div>
+      <nav class="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-3 pb-2 text-sm font-semibold" aria-label="Admin">
+        {nav.map(([href, key]) => (
+          <a
+            href={href}
+            class:list={['shrink-0 rounded-full px-3 py-1', section === href ? 'bg-gold text-ink' : 'bg-cream/10']}
+            aria-current={section === href ? 'page' : undefined}
+          >
+            {dict[key]}
+          </a>
+        ))}
+      </nav>
+    </header>
+    <main class="mx-auto max-w-6xl px-3 pt-4 pb-24">
+      <slot />
+    </main>
+    <script>
+      document.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((b) =>
+        b.addEventListener('click', () => {
+          document.cookie = `mz_admin_lang=${b.dataset.lang}; path=/admin; max-age=31536000; samesite=lax`;
+          location.reload();
+        }),
+      );
+    </script>
+  </body>
+</html>

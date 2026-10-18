@@ -1,0 +1,10 @@
+# Copy to .dev.vars for local development. Every value is optional; the
+# feature it unlocks stays off without it.
+
+# Sign in to /admin locally without Cloudflare Access (dev server only).
+DEV_STAFF_EMAIL=you@example.com
+
+# Production staff sign-in (Cloudflare Zero Trust → Access → Applications).
+# ACCESS_TEAM_DOMAIN=mezcalito.cloudflareaccess.com
+# ACCESS_AUD=<the application's audience tag>
+# OWNER_EMAILS=owner@example.com
