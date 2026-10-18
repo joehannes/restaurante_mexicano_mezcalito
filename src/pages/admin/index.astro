@@ -1,0 +1,11 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import OrdersBoard from '../../islands/admin/OrdersBoard';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'orders');
+if (!page) return forbidden();
+---
+<Admin title={page.dict['board.title']} section="/admin">
+  <OrdersBoard client:load dict={page.dict} locale={page.locale} />
+</Admin>

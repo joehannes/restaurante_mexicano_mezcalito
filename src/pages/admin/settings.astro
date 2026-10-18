@@ -1,0 +1,11 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import SettingsAdmin from '../../islands/admin/SettingsAdmin';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'settings');
+if (!page) return forbidden();
+---
+<Admin title={page.dict['settings.title']} section="/admin/settings">
+  <SettingsAdmin client:load dict={page.dict} locale={page.locale} />
+</Admin>

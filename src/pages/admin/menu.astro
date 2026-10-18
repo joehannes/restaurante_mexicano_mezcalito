@@ -1,0 +1,12 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import MenuAdmin from '../../islands/admin/MenuAdmin';
+import { can } from '../../domain/roles';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'soldout');
+if (!page) return forbidden();
+---
+<Admin title={page.dict['menu.title']} section="/admin/menu">
+  <MenuAdmin client:load dict={page.dict} locale={page.locale} canEdit={can(page.staff.role, 'menu')} />
+</Admin>

@@ -1,0 +1,11 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import StaffAdmin from '../../islands/admin/StaffAdmin';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'staff');
+if (!page) return forbidden();
+---
+<Admin title={page.dict['staff.title']} section="/admin/staff">
+  <StaffAdmin client:load dict={page.dict} me={page.staff.email} />
+</Admin>

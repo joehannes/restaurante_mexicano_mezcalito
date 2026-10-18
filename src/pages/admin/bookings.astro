@@ -1,0 +1,13 @@
+---
+import { env } from 'cloudflare:workers';
+import Admin from '../../layouts/Admin.astro';
+import BookingsAdmin from '../../islands/admin/BookingsAdmin';
+import { localNow } from '../../domain/schedule';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'reservations');
+if (!page) return forbidden();
+---
+<Admin title={page.dict['bookings.title']} section="/admin/bookings">
+  <BookingsAdmin client:load dict={page.dict} locale={page.locale} today={localNow(new Date(), env.TIMEZONE).date} />
+</Admin>

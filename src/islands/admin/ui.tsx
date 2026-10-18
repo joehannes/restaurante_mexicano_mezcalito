@@ -4,7 +4,9 @@ import type { Localized } from '../../domain/types';
 import type { AdminDictionary } from '../../i18n/admin';
 import { api } from './api';
 
-export const input = 'w-full rounded-lg border-2 border-ink/15 bg-white px-3 py-2';
+/** A text box at its natural width; `input` fills the row. */
+export const field = 'rounded-lg border-2 border-ink/15 bg-white px-3 py-2';
+export const input = `${field} w-full`;
 export const button = 'rounded-full bg-ink px-4 py-2 text-sm font-bold text-cream disabled:opacity-40';
 export const ghost = 'rounded-full border-2 border-ink/20 px-3 py-1.5 text-sm font-semibold disabled:opacity-40';
 
