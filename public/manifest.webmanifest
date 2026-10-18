@@ -1,0 +1,20 @@
+{
+  "name": "Mezcalito Bar & Grill",
+  "short_name": "Mezcalito",
+  "description": "Jamaican–Mexican fusion in Bávaro, Punta Cana. Order, book a table, see tonight's line-up.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbf3e4",
+  "theme_color": "#141210",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Menu", "url": "/en/menu" },
+    { "name": "Book a table", "url": "/en/reserve" },
+    { "name": "Tonight", "url": "/en/tonight" }
+  ]
+}

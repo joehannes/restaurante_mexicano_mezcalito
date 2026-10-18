@@ -9,7 +9,7 @@ import { priceCart } from '../domain/pricing';
 import type { Locale, MenuItem, OrderMode, PricingSettings } from '../domain/types';
 import { localized } from '../domain/types';
 import { fill, type Dictionary } from '../i18n/fill';
-import { clearCart, removeLine, setQty, type StoredLine } from '../lib/cart';
+import { clearCart, rememberOrder, removeLine, setQty, type StoredLine } from '../lib/cart';
 import { formatClock, formatPrice, formatUsd, usdCharge } from '../lib/format';
 import { useCart } from './useCart';
 
@@ -62,7 +62,10 @@ export default function Checkout(props: Props) {
       if (saved.name) setName(saved.name);
       if (saved.phone) setPhone(saved.phone);
     } catch {}
-    const t = new URLSearchParams(location.search).get('t');
+    let t = new URLSearchParams(location.search).get('t');
+    try {
+      t ??= sessionStorage.getItem('mezcalito.table');
+    } catch {}
     if (t) {
       setMode('dine_in');
       setTable(t.slice(0, 12));
@@ -120,6 +123,7 @@ export default function Checkout(props: Props) {
         try {
           localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, phone }));
         } catch {}
+        rememberOrder(cart);
         clearCart();
         location.href =
           payment === 'online' ? `/api/pay/${body.code}?k=${body.key}&p=${choice}` : `${props.orderHref}/${body.code}?k=${body.key}`;

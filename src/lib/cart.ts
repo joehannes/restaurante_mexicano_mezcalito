@@ -98,3 +98,21 @@ export const removeLine = (key: string) => commit(getCart().filter((l) => l.key 
 export const clearCart = () => commit(EMPTY);
 
 export const cartCount = (cart: readonly CartLine[] = getCart()) => cart.reduce((n, l) => n + l.qty, 0);
+
+const LAST_ORDER_KEY = 'mezcalito.lastOrder.v1';
+
+/** Remember what was just ordered, for "order last time's food again". */
+export function rememberOrder(cart: readonly CartLine[]) {
+  try {
+    localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(cart.map(({ itemId, variantId, qty, weightLb, options, note }) => ({ itemId, variantId, qty, weightLb, options, note }))));
+  } catch {}
+}
+
+export function lastOrder(): CartLine[] {
+  try {
+    const lines = JSON.parse(localStorage.getItem(LAST_ORDER_KEY) ?? '[]') as CartLine[];
+    return Array.isArray(lines) ? lines.filter((l) => typeof l?.itemId === 'string' && typeof l.qty === 'number') : [];
+  } catch {
+    return [];
+  }
+}

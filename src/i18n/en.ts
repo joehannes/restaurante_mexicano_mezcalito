@@ -314,6 +314,14 @@ export const en = {
   'radio.plate': 'Here’s your plate',
   'radio.popular': 'most chosen',
 
+  'table.at': 'Table {table}',
+  'table.waiter': 'Call the waiter',
+  'table.bill': 'The bill, please',
+  'table.sent': 'Done — someone is on the way.',
+  'table.leave': 'Not at this table',
+
+  'reorder.title': 'Order last time’s food again',
+
   'common.back': 'Back',
   'common.continue': 'Continue',
   'common.optional': 'optional',

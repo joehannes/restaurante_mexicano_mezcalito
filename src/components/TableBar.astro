@@ -1,0 +1,59 @@
+---
+/**
+ * At the table: a guest who scanned the table's QR code (?t=12) gets a bar on
+ * every page to call the waiter or ask for the bill, and their order goes to
+ * that table. The table is remembered for the visit, not beyond it.
+ */
+import type { Locale } from '../domain/types';
+import { dictionary, t } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+// Raw text: the table number is filled in by the script below.
+const labels = { at: dictionary(locale)['table.at'], sent: t(locale, 'table.sent') };
+---
+<div id="table-bar" class="sticky top-14 z-30 hidden bg-gold text-ink" role="region" aria-label={t(locale, 'table.waiter')}>
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 py-2 text-sm font-bold">
+    <span data-table-label class="font-display text-lg uppercase"></span>
+    <button type="button" data-call="waiter" class="rounded-full bg-ink px-3 py-1.5 text-cream">🙋 {t(locale, 'table.waiter')}</button>
+    <button type="button" data-call="bill" class="rounded-full bg-ink px-3 py-1.5 text-cream">🧾 {t(locale, 'table.bill')}</button>
+    <span data-table-status role="status" class="font-semibold"></span>
+    <button type="button" data-leave class="ml-auto text-xs font-semibold underline">{t(locale, 'table.leave')}</button>
+  </div>
+</div>
+
+<script is:inline define:vars={{ labels }}>
+  (() => {
+    const KEY = 'mezcalito.table';
+    const bar = document.getElementById('table-bar');
+    let table;
+    try {
+      const fromUrl = new URLSearchParams(location.search).get('t');
+      if (fromUrl && /^[A-Za-z0-9-]{1,12}$/.test(fromUrl)) sessionStorage.setItem(KEY, fromUrl);
+      table = sessionStorage.getItem(KEY);
+    } catch {}
+    if (!table || !bar) return;
+    bar.classList.remove('hidden');
+    bar.querySelector('[data-table-label]').textContent = labels.at.replace('{table}', table);
+    const status = bar.querySelector('[data-table-status]');
+    bar.querySelectorAll('[data-call]').forEach((button) =>
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        const ok = await fetch('/api/table', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ table, request: button.dataset.call }),
+        }).then((r) => r.ok, () => false);
+        status.textContent = ok ? labels.sent : '';
+        // One call a minute is plenty; the staff have already been told.
+        setTimeout(() => { button.disabled = false; status.textContent = ''; }, 60000);
+      }),
+    );
+    bar.querySelector('[data-leave]').addEventListener('click', () => {
+      try { sessionStorage.removeItem(KEY); } catch {}
+      bar.classList.add('hidden');
+    });
+  })();
+</script>

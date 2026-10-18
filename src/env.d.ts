@@ -43,6 +43,9 @@ declare namespace Cloudflare {
   interface Env extends MezcalitoSecrets {}
 }
 
+/** Set at build time (astro.config.mjs). */
+declare const __BUILD_ID__: string;
+
 declare namespace App {
   interface Locals {
     staff?: import('./server/access').Staff;

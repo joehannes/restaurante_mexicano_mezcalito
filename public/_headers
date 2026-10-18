@@ -1,0 +1,6 @@
+# The service worker and manifest must be re-checked on every visit, or a
+# fixed bug could live on in visitors' browsers.
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: public, max-age=3600

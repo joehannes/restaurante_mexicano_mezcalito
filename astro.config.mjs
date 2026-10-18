@@ -27,5 +27,7 @@ export default defineConfig({
   devToolbar: { enabled: false },
   vite: {
     plugins: [tailwindcss()],
+    // Part of the edge-cache key, so a deploy never serves pages the old code rendered.
+    define: { __BUILD_ID__: JSON.stringify(Date.now().toString(36)) },
   },
 });

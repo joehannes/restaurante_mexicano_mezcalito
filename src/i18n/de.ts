@@ -315,6 +315,14 @@ export const de: Record<UiKey, string> = {
   'radio.plate': 'Hier ist dein Teller',
   'radio.popular': 'am häufigsten gewählt',
 
+  'table.at': 'Tisch {table}',
+  'table.waiter': 'Bedienung rufen',
+  'table.bill': 'Die Rechnung, bitte',
+  'table.sent': 'Erledigt — es kommt gleich jemand.',
+  'table.leave': 'Nicht an diesem Tisch',
+
+  'reorder.title': 'Dasselbe wie letztes Mal bestellen',
+
   'common.back': 'Zurück',
   'common.continue': 'Weiter',
   'common.optional': 'optional',

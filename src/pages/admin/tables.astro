@@ -1,0 +1,53 @@
+---
+/**
+ * Table QR codes, ready to print: each opens the menu in table mode, so the
+ * guest orders to that table and can call the waiter or ask for the bill.
+ */
+import qrcode from 'qrcode-generator';
+import Admin from '../../layouts/Admin.astro';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'settings');
+if (!page) return forbidden();
+const { dict } = page;
+const count = Math.min(80, Math.max(1, Number(Astro.url.searchParams.get('n')) || 20));
+const lang = ['en', 'es', 'fr', 'de'].includes(Astro.url.searchParams.get('lang') ?? '') ? Astro.url.searchParams.get('lang')! : 'es';
+const origin = Astro.site!.origin;
+const tables = Array.from({ length: count }, (_, i) => {
+  const table = String(i + 1);
+  const url = `${origin}/${lang}/menu?t=${table}`;
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  return { table, url, svg: qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true }) };
+});
+---
+<Admin title={dict['tables.title']} section="/admin/tables">
+  <div class="print:hidden">
+    <h1 class="font-display text-3xl uppercase">{dict['tables.title']}</h1>
+    <p class="mt-2 max-w-2xl text-sm text-ink/70">{dict['tables.intro']}</p>
+    <form class="mt-4 flex flex-wrap items-end gap-3">
+      <label class="text-sm font-semibold">
+        {dict['tables.count']}
+        <input name="n" type="number" min="1" max="80" value={count} class="mt-1 block w-24 rounded-lg border-2 border-ink/15 bg-white px-3 py-2" />
+      </label>
+      <label class="text-sm font-semibold">
+        {dict['tables.language']}
+        <select name="lang" class="mt-1 block rounded-lg border-2 border-ink/15 bg-white px-3 py-2">
+          {['es', 'en', 'fr', 'de'].map((l) => <option value={l} selected={l === lang}>{l.toUpperCase()}</option>)}
+        </select>
+      </label>
+      <button class="rounded-full bg-ink px-4 py-2 text-sm font-bold text-cream">{dict['tables.make']}</button>
+      <button type="button" onclick="print()" class="rounded-full bg-hibiscus px-4 py-2 text-sm font-bold text-cream">{dict['tables.print']}</button>
+    </form>
+  </div>
+  <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 print:mt-0 print:grid-cols-3">
+    {tables.map((t) => (
+      <li class="break-inside-avoid rounded-2xl border-4 border-ink bg-white p-3 text-center">
+        <p class="font-display text-3xl uppercase">{dict['tables.table'].replace('{n}', t.table)}</p>
+        <div class="mx-auto mt-2 w-full max-w-48" set:html={t.svg} />
+        <p class="mt-2 text-xs font-semibold">Mezcalito · {dict['tables.scan']}</p>
+      </li>
+    ))}
+  </ul>
+</Admin>

@@ -46,10 +46,22 @@ const skin = Object.entries(tokens)
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#141210" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {skin && <style is:inline set:html={`:root{${skin}}`} />}
     <slot name="head" />
   </head>
   <body class="min-h-dvh antialiased">
     <slot />
+    {import.meta.env.PROD && (
+      <script is:inline define:vars={{ locale }}>
+        // Installable, and the menu readable offline (see public/sw.js).
+        if ('serviceWorker' in navigator) {
+          addEventListener('load', () =>
+            navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready).then((r) => r.active?.postMessage({ warm: locale })),
+          );
+        }
+      </script>
+    )}
   </body>
 </html>

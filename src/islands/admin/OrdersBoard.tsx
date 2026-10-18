@@ -70,6 +70,7 @@ export default function OrdersBoard({ dict, locale }: { dict: AdminDictionary; l
   const [busy, setBusy] = useState<string>();
   const [sound, setSound] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [calls, setCalls] = useState<{ key: string; table: string; request: 'waiter' | 'bill' }[]>([]);
   const audio = useRef<AudioContext | null>(null);
   const a = (key: AdminKey, vars?: Record<string, string | number>) => fillAdmin(dict, key, vars);
   const loc = locale as Locale;
@@ -93,10 +94,18 @@ export default function OrdersBoard({ dict, locale }: { dict: AdminDictionary; l
       socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/admin/ws`);
       socket.onopen = () => setOffline(false);
       socket.onmessage = (event) => {
-        let data: { type?: string; code?: string } = {};
+        let data: { type?: string; code?: string; table?: string; request?: 'waiter' | 'bill'; at?: string } = {};
         try {
           data = JSON.parse(event.data);
         } catch {}
+        if (data.type === 'table.call' && data.table && data.request) {
+          const call = { key: `${data.table}-${data.request}-${data.at}`, table: data.table, request: data.request };
+          setCalls((list) => [...list.filter((c) => !(c.table === call.table && c.request === call.request)), call]);
+          if (audio.current) chime(audio.current);
+          const text = fillAdmin(dict, `board.call.${call.request}`, { table: call.table });
+          if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification(text);
+          return;
+        }
         if (data.type === 'order.created') {
           if (audio.current) chime(audio.current);
           if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
@@ -174,6 +183,19 @@ export default function OrdersBoard({ dict, locale }: { dict: AdminDictionary; l
           </a>
         )}
       </div>
+
+      {calls.length > 0 && (
+        <ul className="mb-4 space-y-2" aria-live="assertive">
+          {calls.map((c) => (
+            <li key={c.key} className="flex items-center justify-between gap-3 rounded-xl bg-gold p-3 text-lg font-bold">
+              {c.request === 'bill' ? '🧾' : '🙋'} {a(`board.call.${c.request}`, { table: c.table })}
+              <button type="button" className={button} onClick={() => setCalls((list) => list.filter((x) => x.key !== c.key))}>
+                {dict['board.dismiss']}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {!board ? (
         <p>{dict['common.loading']}</p>

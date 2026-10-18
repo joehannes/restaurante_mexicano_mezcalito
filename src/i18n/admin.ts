@@ -72,6 +72,9 @@ const en = {
   'board.newParties': '{n} new party requests',
   'board.sparklers': 'Sparklers',
   'board.newOrder': 'New order {code}',
+  'board.call.waiter': 'Table {table} is calling a waiter',
+  'board.call.bill': 'Table {table} wants the bill',
+  'board.dismiss': 'Done',
 
   'menu.title': 'Menu',
   'menu.soldOut': 'Sold out',
@@ -179,6 +182,16 @@ const en = {
   'radio.trait.firstTime': 'first time with Jamaican food',
   'radio.trait.party': 'party size',
   'radio.trait.budget': 'budget per person (RD$)',
+
+  'nav.tables': 'Table QR codes',
+  'tables.title': 'Table QR codes',
+  'tables.intro': 'Print these and stick one on each table. Scanning opens the menu for that table: guests order to it, call a waiter or ask for the bill, and the board chimes.',
+  'tables.count': 'Number of tables',
+  'tables.language': 'Language',
+  'tables.make': 'Make codes',
+  'tables.print': 'Print',
+  'tables.table': 'Table {n}',
+  'tables.scan': 'scan to order',
 
   'bookings.title': 'Bookings',
   'bookings.covers': '{booked} of {capacity} covers at the busiest seating',
@@ -328,6 +341,9 @@ const es: Record<AdminKey, string> = {
   'board.newParties': '{n} solicitudes de fiesta nuevas',
   'board.sparklers': 'Bengalas',
   'board.newOrder': 'Pedido nuevo {code}',
+  'board.call.waiter': 'La mesa {table} llama al mesero',
+  'board.call.bill': 'La mesa {table} pide la cuenta',
+  'board.dismiss': 'Listo',
 
   'menu.title': 'Menú',
   'menu.soldOut': 'Agotado',
@@ -435,6 +451,16 @@ const es: Record<AdminKey, string> = {
   'radio.trait.firstTime': 'primera vez con comida jamaiquina',
   'radio.trait.party': 'tamaño del grupo',
   'radio.trait.budget': 'presupuesto por persona (RD$)',
+
+  'nav.tables': 'Códigos QR de mesas',
+  'tables.title': 'Códigos QR de mesas',
+  'tables.intro': 'Imprímelos y pega uno en cada mesa. Al escanearlo se abre el menú de esa mesa: el cliente pide a la mesa, llama al mesero o pide la cuenta, y suena el aviso en la pantalla de pedidos.',
+  'tables.count': 'Número de mesas',
+  'tables.language': 'Idioma',
+  'tables.make': 'Crear códigos',
+  'tables.print': 'Imprimir',
+  'tables.table': 'Mesa {n}',
+  'tables.scan': 'escanea para pedir',
 
   'bookings.title': 'Reservas',
   'bookings.covers': '{booked} de {capacity} cubiertos en el turno más lleno',

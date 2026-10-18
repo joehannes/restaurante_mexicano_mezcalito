@@ -5,6 +5,7 @@ import Hero from '../../components/Hero.astro';
 import FlyerCard from '../../components/FlyerCard.astro';
 import DishSingle from '../../components/DishSingle.astro';
 import JsonLd from '../../components/JsonLd.astro';
+import Reorder from '../../components/Reorder.astro';
 import { activeSpecials, parseClock, specialsOn, localNow } from '../../domain/schedule';
 import { localized } from '../../domain/types';
 import { formatClock } from '../../lib/format';
@@ -34,6 +35,7 @@ const maps = `https://www.google.com/maps/search/?api=1&query=${site.address.lat
 >
   <JsonLd slot="head" data={restaurantJsonLd(site, Astro.site!.origin, locale)} />
   <Hero ctx={ctx} />
+  <Reorder locale={locale} />
 
   {(live.length > 0 || later.length > 0) && (
     <section class="bg-gold" aria-labelledby="now">

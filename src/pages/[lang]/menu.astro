@@ -3,6 +3,7 @@ import { env } from 'cloudflare:workers';
 import Site from '../../layouts/Site.astro';
 import MenuBoard from '../../islands/MenuBoard';
 import JsonLd from '../../components/JsonLd.astro';
+import Reorder from '../../components/Reorder.astro';
 import { menuJsonLd } from '../../lib/seo';
 import { dictionary, t } from '../../i18n/ui';
 import { loadCategories, loadMenu } from '../../server/menu';
@@ -26,6 +27,7 @@ const visible = menu.filter((i) => !i.hidden);
     <p class="mt-2 max-w-2xl text-ink/80">{t(locale, 'menu.intro')}</p>
     <p class="mt-2 text-sm"><a href={href(locale, '/selector')} class="font-semibold underline">{t(locale, 'home.unsure')} {t(locale, 'selector.title')} →</a></p>
   </div>
+  <Reorder locale={locale} />
   <MenuBoard
     client:load
     locale={locale}

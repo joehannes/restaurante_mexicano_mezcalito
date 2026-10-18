@@ -315,6 +315,14 @@ export const es: Record<UiKey, string> = {
   'radio.plate': 'Aquí está tu plato',
   'radio.popular': 'lo más elegido',
 
+  'table.at': 'Mesa {table}',
+  'table.waiter': 'Llamar al mesero',
+  'table.bill': 'La cuenta, por favor',
+  'table.sent': 'Listo — ya va alguien.',
+  'table.leave': 'No estoy en esta mesa',
+
+  'reorder.title': 'Pedir lo mismo que la última vez',
+
   'common.back': 'Atrás',
   'common.continue': 'Continuar',
   'common.optional': 'opcional',
