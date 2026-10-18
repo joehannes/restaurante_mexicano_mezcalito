@@ -8,3 +8,19 @@ DEV_STAFF_EMAIL=you@example.com
 # ACCESS_TEAM_DOMAIN=mezcalito.cloudflareaccess.com
 # ACCESS_AUD=<the application's audience tag>
 # OWNER_EMAILS=owner@example.com
+
+# Online payments — each provider appears at checkout once its keys are set.
+# AZUL_MERCHANT_ID=
+# AZUL_AUTH_KEY=
+# AZUL_MERCHANT_NAME=Mezcalito Bar and Grill
+# AZUL_MODE=test            # live to leave the sandbox
+# PAYPAL_CLIENT_ID=
+# PAYPAL_SECRET=
+# PAYPAL_MODE=test          # live to leave the sandbox
+
+# Messages — WhatsApp Cloud API templates for guests, Resend email for both.
+# WHATSAPP_TOKEN=
+# WHATSAPP_PHONE_ID=
+# RESEND_API_KEY=
+# EMAIL_FROM=Mezcalito <hola@mezcalitobarandgrill.com>
+# STAFF_EMAILS=owner@example.com

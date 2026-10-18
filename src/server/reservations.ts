@@ -8,6 +8,8 @@
  */
 import { availability, canBook, type Booking, type BookingCheck, type ReservationRules } from '../domain/capacity';
 import { reservationCode, type ReservationInput } from '../domain/reservationInput';
+import { waitUntil } from 'cloudflare:workers';
+import { notifyReservation } from './notify';
 import { tellKitchen } from './orders';
 
 export async function loadRules(db: D1Database): Promise<ReservationRules> {
@@ -77,6 +79,7 @@ export async function book(env: Env, input: ReservationInput, now = new Date()):
     }
 
     await tellKitchen(env, 'board', { type: 'reservation.created', code, date: input.date, time: input.time, party: input.party });
+    waitUntil(notifyReservation(env, code, rules.seatingMinutes));
     return { ok: true, code, seatingMinutes: rules.seatingMinutes };
   }
   return { ok: false, reason: 'storage' };

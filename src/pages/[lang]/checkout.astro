@@ -6,6 +6,7 @@ import { orderSlots } from '../../domain/schedule';
 import { dictionary, t, when } from '../../i18n/ui';
 import { loadMenu } from '../../server/menu';
 import { href, notFound, pageContext } from '../../server/page';
+import { onlineProviders } from '../../server/payments';
 
 const ctx = await pageContext(Astro.params.lang);
 if (!ctx) return notFound();
@@ -32,5 +33,6 @@ Astro.response.headers.set('cache-control', 'no-store');
     uberEatsUrl={site.social.ubereats}
     menuHref={href(locale, '/menu')}
     orderHref={href(locale, '/o')}
+    onlineProviders={onlineProviders(env)}
   />
 </Site>

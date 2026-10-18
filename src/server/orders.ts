@@ -6,8 +6,11 @@ import { findZone, priceCart } from '../domain/pricing';
 import { openStatus, orderSlots } from '../domain/schedule';
 import { orderCode, type OrderInput } from '../domain/orderInput';
 import { localized } from '../domain/types';
+import { waitUntil } from 'cloudflare:workers';
 import { loadSite } from './content';
 import { loadMenu } from './menu';
+import { notifyOrderPlaced } from './notify';
+import { onlineProviders } from './payments';
 
 export type PlaceOrderError =
   | 'closed'
@@ -30,7 +33,8 @@ export async function placeOrder(env: Env, input: OrderInput, now = new Date()):
   const [menu, { site }] = await Promise.all([loadMenu(env.DB), loadSite(env.DB)]);
   const tz = env.TIMEZONE;
 
-  if (input.payment === 'online') return { ok: false, error: 'online_unavailable' };
+  const online = input.payment === 'online';
+  if (online && !onlineProviders(env).length) return { ok: false, error: 'online_unavailable' };
 
   if (input.when === 'asap') {
     if (!openStatus(now, site.hours, site.closures, tz).open) return { ok: false, error: 'closed' };
@@ -58,8 +62,8 @@ export async function placeOrder(env: Env, input: OrderInput, now = new Date()):
       await env.DB.batch([
         env.DB.prepare(
           `INSERT INTO orders (code, access_key, mode, status, payment_method, customer_name, customer_phone, customer_email,
-             address, zone_id, table_label, scheduled_for, locale, notes, subtotal, itbis, service, delivery_fee, total)
-           VALUES (?1, ?2, ?3, 'received', ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)`,
+             address, zone_id, table_label, scheduled_for, locale, notes, subtotal, itbis, service, delivery_fee, total, payment_status)
+           VALUES (?1, ?2, ?3, ?19, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?20)`,
         ).bind(
           code,
           key,
@@ -79,6 +83,8 @@ export async function placeOrder(env: Env, input: OrderInput, now = new Date()):
           priced.service,
           priced.deliveryFee,
           priced.total,
+          online ? 'awaiting_payment' : 'received',
+          online ? 'pending' : 'unpaid',
         ),
         ...priced.lines.map((line, i) =>
           env.DB.prepare(
@@ -98,14 +104,17 @@ export async function placeOrder(env: Env, input: OrderInput, now = new Date()):
             line.lineTotal,
           ),
         ),
-        env.DB.prepare(`INSERT INTO order_events (order_id, status, actor) VALUES (${orderId}, 'received', 'guest')`).bind(code),
+        env.DB.prepare(`INSERT INTO order_events (order_id, status, actor) VALUES (${orderId}, ?2, 'guest')`).bind(code, online ? 'awaiting_payment' : 'received'),
       ]);
     } catch (error) {
       if (String(error).includes('UNIQUE') && String(error).includes('code')) continue;
       return { ok: false, error: 'storage', detail: String(error) };
     }
 
+    // An order paid online reaches the kitchen once the payment is confirmed.
+    if (online) return { ok: true, code, key, total: priced.total };
     const item = (id: string) => byId.get(id);
+    waitUntil(notifyOrderPlaced(env, code));
     await tellKitchen(env, 'board', {
       type: 'order.created',
       code,
@@ -142,6 +151,8 @@ export interface OrderView {
   itbis: number;
   service: number;
   deliveryFee: number;
+  payment: string;
+  paymentStatus: string;
   /** Only with the right access key. */
   customerName?: string;
   items?: { qty: number; name: string; options: Record<string, string[]>; note: string | null; lineTotal: number }[];
@@ -162,6 +173,8 @@ export async function loadOrder(db: D1Database, code: string, key?: string | nul
     itbis: Number(order.itbis),
     service: Number(order.service),
     deliveryFee: Number(order.delivery_fee),
+    payment: String(order.payment_method),
+    paymentStatus: String(order.payment_status),
   };
   if (!key || key !== order.access_key) return view;
   const { results } = await db

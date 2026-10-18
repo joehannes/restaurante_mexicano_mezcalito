@@ -10,7 +10,7 @@ import type { Locale, MenuItem, OrderMode, PricingSettings } from '../domain/typ
 import { localized } from '../domain/types';
 import { fill, type Dictionary } from '../i18n/fill';
 import { clearCart, removeLine, setQty, type StoredLine } from '../lib/cart';
-import { formatClock, formatPrice, formatUsd } from '../lib/format';
+import { formatClock, formatPrice, formatUsd, usdCharge } from '../lib/format';
 import { useCart } from './useCart';
 
 interface Props {
@@ -27,7 +27,11 @@ interface Props {
   uberEatsUrl?: string;
   menuHref: string;
   orderHref: string;
+  /** Online payment providers that are set up; none hides paying online. */
+  onlineProviders: ('azul' | 'paypal')[];
 }
+
+type PayChoice = Exclude<PaymentMethod, 'online'> | 'azul' | 'paypal';
 
 const PROFILE_KEY = 'mezcalito.guest.v1';
 
@@ -45,7 +49,8 @@ export default function Checkout(props: Props) {
   const [reference, setReference] = useState('');
   const [table, setTable] = useState('');
   const [notes, setNotes] = useState('');
-  const [payment, setPayment] = useState<PaymentMethod>('cash');
+  const [choice, setChoice] = useState<PayChoice>('cash');
+  const payment: PaymentMethod = choice === 'azul' || choice === 'paypal' ? 'online' : choice;
   const [errors, setErrors] = useState<FieldError[]>([]);
   const [problem, setProblem] = useState<string>();
   const [sending, setSending] = useState(false);
@@ -116,7 +121,8 @@ export default function Checkout(props: Props) {
           localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, phone }));
         } catch {}
         clearCart();
-        location.href = `${props.orderHref}/${body.code}?k=${body.key}`;
+        location.href =
+          payment === 'online' ? `/api/pay/${body.code}?k=${body.key}&p=${choice}` : `${props.orderHref}/${body.code}?k=${body.key}`;
         return;
       }
       if (body.fields) {
@@ -267,13 +273,15 @@ export default function Checkout(props: Props) {
         <section>
           <h2 className="font-display text-2xl uppercase">{dict['checkout.pay']}</h2>
           <div className="mt-3 grid gap-2">
-            {(['cash', 'card_on_delivery'] as const).map((p) => (
-              <label key={p} className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 font-semibold ${payment === p ? 'border-ink bg-gold' : 'border-ink/15 bg-white'}`}>
-                <input type="radio" name="payment" className="accent-ink" checked={payment === p} onChange={() => setPayment(p)} />
-                {dict[`checkout.pay.${p}`]}
+            {(['cash', 'card_on_delivery', ...props.onlineProviders] as const).map((p) => (
+              <label key={p} className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 font-semibold ${choice === p ? 'border-ink bg-gold' : 'border-ink/15 bg-white'}`}>
+                <input type="radio" name="payment" className="accent-ink" checked={choice === p} onChange={() => setChoice(p)} />
+                {p === 'paypal'
+                  ? fill(dict, 'checkout.pay.paypal', { usd: priced.ok ? `US$${usdCharge(priced.total, pricing.usdRate)}` : 'US$' })
+                  : dict[`checkout.pay.${p}`]}
               </label>
             ))}
-            <p className="px-1 text-sm text-ink/60">{dict['checkout.pay.onlineSoon']}</p>
+            {props.onlineProviders.length === 0 && <p className="px-1 text-sm text-ink/60">{dict['checkout.pay.onlineSoon']}</p>}
           </div>
         </section>
       </div>
@@ -306,7 +314,7 @@ export default function Checkout(props: Props) {
           disabled={!canOrder || sending}
           className="mx-auto block w-full max-w-md rounded-full bg-hibiscus px-6 py-4 text-lg font-bold text-cream shadow-[4px_4px_0_var(--c-ink)] disabled:bg-ink/40 disabled:shadow-none"
         >
-          {sending ? dict['checkout.placing'] : fill(dict, 'checkout.place', { total: priced.ok ? formatPrice(priced.total, locale) : '' })}
+          {sending ? dict[payment === 'online' ? 'checkout.paying' : 'checkout.placing'] : fill(dict, 'checkout.place', { total: priced.ok ? formatPrice(priced.total, locale) : '' })}
         </button>
       </div>
     </form>

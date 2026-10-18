@@ -130,6 +130,9 @@ export const es: Record<UiKey, string> = {
   'checkout.closed': 'La cocina está cerrada ahora. Abre {when}.',
   'checkout.error': 'Algo salió mal. Inténtalo de nuevo o escríbenos por WhatsApp.',
   'checkout.fix': 'Revisa los campos marcados.',
+  'checkout.pay.azul': 'Tarjeta en línea (Visa, Mastercard)',
+  'checkout.pay.paypal': 'PayPal · se cobra en dólares ({usd})',
+  'checkout.paying': 'Te llevamos a la página de pago…',
 
   'order.title': 'Orden {code}',
   'order.thanks': '¡Gracias, {name}! La cocina tiene tu orden.',
@@ -143,6 +146,12 @@ export const es: Record<UiKey, string> = {
   'order.live': 'Esta página se actualiza sola.',
   'order.whatsapp': 'Escríbenos sobre esta orden',
   'order.notFound': 'No encontramos esa orden.',
+  'order.pay.title': 'Esperando tu pago',
+  'order.pay.pending': 'Tu pedido pasa a la cocina en cuanto se confirme el pago.',
+  'order.pay.failed': 'El pago no se completó. Inténtalo de nuevo o paga en persona.',
+  'order.pay.retry': 'Pagar en línea · {provider}',
+  'order.pay.cash': 'Mejor pago en persona',
+  'order.paid': 'Pagado en línea',
 
   'reserve.title': 'Reservar mesa',
   'reserve.intro': 'Terraza, adentro o junto al DJ. Grupos grandes: mira Fiestas.',
@@ -223,6 +232,15 @@ export const es: Record<UiKey, string> = {
   'footer.delivery': 'También en Uber Eats',
   'footer.prices': 'Precios en pesos dominicanos, sin 18% de ITBIS ni 10% de servicio.',
   'footer.more': 'Más',
+
+  'mail.order.subject': 'Tu pedido de Mezcalito {code}',
+  'mail.order.body': '¡Hola {name}! La cocina ya tiene tu pedido {code} ({total}). Síguelo en vivo: {link}',
+  'mail.ready.body': 'Tu pedido {code} está listo. ¡Ven a buscarlo!',
+  'mail.onTheWay.body': 'Tu pedido {code} va en camino.',
+  'mail.reservation.subject': 'Tu mesa en Mezcalito — {date}, {time}',
+  'mail.reservation.body': '¡Hola {name}! Tu reserva está hecha: {party} personas el {date} a las {time}. Reserva {code}. Calle Pedro Mir, Bávaro — a una cuadra de la playa. ¡Te esperamos!',
+  'mail.reminder.subject': 'Nos vemos hoy en Mezcalito',
+  'mail.reminder.body': '¡Hola {name}! Te recordamos tu mesa hoy a las {time} para {party}. Reserva {code}.',
 
   'common.back': 'Atrás',
   'common.continue': 'Continuar',

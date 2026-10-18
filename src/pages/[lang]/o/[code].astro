@@ -11,6 +11,7 @@ import { formatClock, formatPrice } from '../../../lib/format';
 import { t } from '../../../i18n/ui';
 import { loadOrder } from '../../../server/orders';
 import { notFound, pageContext } from '../../../server/page';
+import { onlineProviders } from '../../../server/payments';
 
 const ctx = await pageContext(Astro.params.lang);
 if (!ctx) return notFound();
@@ -28,6 +29,11 @@ const current = order ? steps.indexOf(order.status) : -1;
 const labels = Object.fromEntries(
   ['awaiting_payment', 'received', 'preparing', 'ready', 'on_the_way', 'done', 'cancelled'].map((s) => [s, t(locale, `order.status.${s}` as 'order.status.received')]),
 );
+// Waiting for an online payment: only the guest with the key can retry or switch to paying in person.
+const unpaid = order?.status === 'awaiting_payment' && !!order.items;
+const payFailed = order?.paymentStatus === 'failed' || Astro.url.searchParams.get('pay') === 'failed';
+const providers = unpaid ? onlineProviders(env) : [];
+const PROVIDER_NAMES = { azul: 'Azul', paypal: 'PayPal' } as const;
 const wa = `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`${code}`)}`;
 ---
 <Site ctx={ctx} path={`/o/${code}`} title={order ? t(locale, 'order.title', { code }) : t(locale, 'order.notFound')} description={t(locale, 'order.live')}>
@@ -38,7 +44,23 @@ const wa = `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}?text=${enc
     ) : (
       <>
         <p class="font-display text-gold uppercase">{t(locale, 'order.title', { code })}</p>
-        {order.customerName && <h1 class="mt-1 font-display text-4xl uppercase">{t(locale, 'order.thanks', { name: order.customerName })}</h1>}
+        {order.customerName && !unpaid && <h1 class="mt-1 font-display text-4xl uppercase">{t(locale, 'order.thanks', { name: order.customerName })}</h1>}
+
+        {unpaid && (
+          <section class="mt-8 rounded-2xl bg-gold p-5" aria-labelledby="pay">
+            <h2 id="pay" class="font-display text-2xl uppercase">{t(locale, 'order.pay.title')}</h2>
+            <p class="mt-1">{t(locale, payFailed ? 'order.pay.failed' : 'order.pay.pending')}</p>
+            <p class="mt-4 flex flex-wrap gap-3">
+              {providers.map((p) => (
+                <a href={`/api/pay/${code}?k=${encodeURIComponent(key ?? '')}&p=${p}`} class="rounded-full bg-ink px-5 py-3 font-bold text-cream">
+                  {t(locale, 'order.pay.retry', { provider: PROVIDER_NAMES[p] })}
+                </a>
+              ))}
+              <button type="button" id="pay-cash" class="rounded-full border-2 border-ink px-5 py-3 font-bold">{t(locale, 'order.pay.cash')}</button>
+            </p>
+          </section>
+        )}
+        {order.paymentStatus === 'paid' && <p class="mt-4 text-center"><span class="sticker bg-jungle text-cream">{t(locale, 'order.paid')}</span></p>}
 
         <ol class="mt-8 grid grid-cols-4 gap-2" data-steps={JSON.stringify(steps)} id="steps">
           {steps.map((s, i) => (
@@ -72,6 +94,16 @@ const wa = `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}?text=${enc
   </div>
 </Site>
 
+{unpaid && (
+  <script is:inline define:vars={{ code, key }}>
+    document.getElementById('pay-cash')?.addEventListener('click', async (e) => {
+      e.currentTarget.disabled = true;
+      await fetch(`/api/order/${code}/cash`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ k: key }) });
+      location.replace(location.pathname + '?k=' + encodeURIComponent(key));
+    });
+  </script>
+)}
+
 {order && (
   <script is:inline define:vars={{ code }}>
     const steps = JSON.parse(document.getElementById('steps').dataset.steps);
@@ -93,7 +125,9 @@ const wa = `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}?text=${enc
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          if (data.status) paint(data.status);
+          // A payment just confirmed: show the order as the kitchen sees it.
+          if (data.status && data.status !== 'awaiting_payment' && document.getElementById('pay')) location.reload();
+          else if (data.status) paint(data.status);
         } catch {}
       };
       ws.onclose = () => setTimeout(connect, 5000);

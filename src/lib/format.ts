@@ -28,6 +28,9 @@ export function formatPrice(centavos: number, locale: Locale): string {
 export const formatUsd = (centavos: number, pesosPerDollar: number, locale: Locale) =>
   `≈ US$${number(Math.round(centavos / 100 / pesosPerDollar), locale, 0)}`;
 
+/** The exact US-dollar amount charged when paying in dollars: rounded up to the cent, e.g. "56.26". */
+export const usdCharge = (centavos: number, pesosPerDollar: number) => (Math.ceil(centavos / pesosPerDollar) / 100).toFixed(2);
+
 export function formatClock(time: ClockTime, locale: Locale): string {
   const [h = 0, m = 0] = time.split(':').map(Number);
   const hour = h % 24;

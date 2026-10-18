@@ -129,6 +129,9 @@ export const en = {
   'checkout.closed': 'The kitchen is closed right now. It opens {when}.',
   'checkout.error': 'Something went wrong. Please try again, or message us on WhatsApp.',
   'checkout.fix': 'Please check the highlighted fields.',
+  'checkout.pay.azul': 'Card online (Visa, Mastercard)',
+  'checkout.pay.paypal': 'PayPal · charged in US dollars ({usd})',
+  'checkout.paying': 'Taking you to the payment page…',
 
   'order.title': 'Order {code}',
   'order.thanks': 'Thank you, {name}! The kitchen has your order.',
@@ -142,6 +145,12 @@ export const en = {
   'order.live': 'This page updates by itself.',
   'order.whatsapp': 'Message us about this order',
   'order.notFound': 'We can’t find that order.',
+  'order.pay.title': 'Waiting for your payment',
+  'order.pay.pending': 'Your order goes to the kitchen as soon as the payment is confirmed.',
+  'order.pay.failed': 'The payment didn’t go through. Try again, or pay in person instead.',
+  'order.pay.retry': 'Pay online · {provider}',
+  'order.pay.cash': 'Pay in person instead',
+  'order.paid': 'Paid online',
 
   'reserve.title': 'Book a table',
   'reserve.intro': 'Terrace, inside or by the DJ booth. Bigger groups: see Parties.',
@@ -222,6 +231,15 @@ export const en = {
   'footer.delivery': 'Also on Uber Eats',
   'footer.prices': 'Prices in Dominican pesos and before 18% ITBIS and 10% service.',
   'footer.more': 'More',
+
+  'mail.order.subject': 'Your Mezcalito order {code}',
+  'mail.order.body': 'Hi {name}! The kitchen has your order {code} ({total}). Follow it live: {link}',
+  'mail.ready.body': 'Your order {code} is ready. Come and get it!',
+  'mail.onTheWay.body': 'Your order {code} is on the way.',
+  'mail.reservation.subject': 'Your table at Mezcalito — {date}, {time}',
+  'mail.reservation.body': 'Hi {name}! You’re booked: {party} guests on {date} at {time}. Reservation {code}. Calle Pedro Mir, Bávaro — one block from the beach. See you soon!',
+  'mail.reminder.subject': 'See you later at Mezcalito',
+  'mail.reminder.body': 'Hi {name}! A reminder of your table today at {time} for {party}. Reservation {code}.',
 
   'common.back': 'Back',
   'common.continue': 'Continue',

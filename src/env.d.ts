@@ -14,6 +14,26 @@ interface MezcalitoSecrets {
   OWNER_EMAILS?: string;
   /** Local development only: sign in to /admin as this email without Access. */
   DEV_STAFF_EMAIL?: string;
+
+  /** Azul Payment Page merchant credentials; `AZUL_MODE=live` leaves the sandbox. */
+  AZUL_MERCHANT_ID?: string;
+  AZUL_MERCHANT_NAME?: string;
+  AZUL_MERCHANT_TYPE?: string;
+  AZUL_AUTH_KEY?: string;
+  AZUL_MODE?: string;
+  /** PayPal REST app credentials; `PAYPAL_MODE=live` leaves the sandbox. */
+  PAYPAL_CLIENT_ID?: string;
+  PAYPAL_SECRET?: string;
+  PAYPAL_MODE?: string;
+
+  /** WhatsApp Cloud API: a permanent token and the sending number's id. */
+  WHATSAPP_TOKEN?: string;
+  WHATSAPP_PHONE_ID?: string;
+  /** Resend API key and the From address, e.g. `Mezcalito <hola@mezcalitobarandgrill.com>`. */
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
+  /** Where new orders and party requests are emailed for the staff (comma-separated). */
+  STAFF_EMAILS?: string;
 }
 
 interface Env extends MezcalitoSecrets {}

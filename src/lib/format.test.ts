@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatClock, formatPhone, formatPrice, formatUsd } from './format';
+import { formatClock, formatPhone, formatPrice, formatUsd, usdCharge } from './format';
 
 describe('formatPrice', () => {
   it('shows whole pesos without decimals and keeps centavos when there are any', () => {
@@ -36,5 +36,13 @@ describe('formatPhone', () => {
   it('writes North American numbers the way they are dialled here', () => {
     expect(formatPhone('+18099591646')).toBe('+1 809-959-1646');
     expect(formatPhone('+4915112345678')).toBe('+4915112345678');
+  });
+});
+
+describe('usdCharge', () => {
+  it('converts centavos to dollars at the admin rate, rounding up to the cent', () => {
+    expect(usdCharge(354_432, 63)).toBe('56.26');
+    expect(usdCharge(6_300, 63)).toBe('1.00');
+    expect(usdCharge(6_301, 63)).toBe('1.01');
   });
 });

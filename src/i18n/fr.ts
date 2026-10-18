@@ -130,6 +130,9 @@ export const fr: Record<UiKey, string> = {
   'checkout.closed': 'La cuisine est fermée. Elle ouvre {when}.',
   'checkout.error': 'Un problème est survenu. Réessayez ou écrivez-nous sur WhatsApp.',
   'checkout.fix': 'Merci de vérifier les champs en surbrillance.',
+  'checkout.pay.azul': 'Carte en ligne (Visa, Mastercard)',
+  'checkout.pay.paypal': 'PayPal · débité en dollars US ({usd})',
+  'checkout.paying': 'Direction la page de paiement…',
 
   'order.title': 'Commande {code}',
   'order.thanks': 'Merci, {name} ! La cuisine a votre commande.',
@@ -143,6 +146,12 @@ export const fr: Record<UiKey, string> = {
   'order.live': 'Cette page se met à jour toute seule.',
   'order.whatsapp': 'Nous écrire à propos de cette commande',
   'order.notFound': 'Commande introuvable.',
+  'order.pay.title': 'En attente de ton paiement',
+  'order.pay.pending': 'Ta commande part en cuisine dès que le paiement est confirmé.',
+  'order.pay.failed': 'Le paiement n’a pas abouti. Réessaie, ou paie sur place.',
+  'order.pay.retry': 'Payer en ligne · {provider}',
+  'order.pay.cash': 'Je paierai sur place',
+  'order.paid': 'Payé en ligne',
 
   'reserve.title': 'Réserver une table',
   'reserve.intro': 'En terrasse, à l’intérieur ou près du DJ. Grands groupes : voir Fêtes.',
@@ -223,6 +232,15 @@ export const fr: Record<UiKey, string> = {
   'footer.delivery': 'Aussi sur Uber Eats',
   'footer.prices': 'Prix en pesos dominicains, hors ITBIS 18 % et service 10 %.',
   'footer.more': 'Plus',
+
+  'mail.order.subject': 'Ta commande Mezcalito {code}',
+  'mail.order.body': 'Bonjour {name} ! La cuisine a bien reçu ta commande {code} ({total}). Suis-la en direct : {link}',
+  'mail.ready.body': 'Ta commande {code} est prête. Viens la chercher !',
+  'mail.onTheWay.body': 'Ta commande {code} est en route.',
+  'mail.reservation.subject': 'Ta table chez Mezcalito — {date}, {time}',
+  'mail.reservation.body': 'Bonjour {name} ! C’est réservé : {party} personnes le {date} à {time}. Réservation {code}. Calle Pedro Mir, Bávaro — à une rue de la plage. À bientôt !',
+  'mail.reminder.subject': 'À tout à l’heure chez Mezcalito',
+  'mail.reminder.body': 'Bonjour {name} ! Petit rappel : ta table aujourd’hui à {time} pour {party}. Réservation {code}.',
 
   'common.back': 'Retour',
   'common.continue': 'Continuer',

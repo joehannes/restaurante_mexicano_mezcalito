@@ -4,7 +4,10 @@
  * Durable Object export itself, and the cron.
  */
 import astro from '@astrojs/cloudflare/entrypoints/server';
+import { localNow } from './domain/schedule';
 import { staffFor } from './server/access';
+import { sendReminders } from './server/notify';
+import { expireUnpaid } from './server/payments';
 
 export { KitchenRoom } from './server/kitchen';
 
@@ -26,7 +29,9 @@ export default {
     }
     return astro.fetch(request, env, ctx);
   },
-  // Every five minutes: expire unpaid online orders, send reservation
-  // reminders. Wired up with online payments and notifications.
-  async scheduled() {},
+  // Every five minutes: cancel online orders left unpaid, send same-day booking reminders.
+  async scheduled(_controller, env, ctx) {
+    const { date, minutes } = localNow(new Date(), env.TIMEZONE);
+    ctx.waitUntil(Promise.allSettled([expireUnpaid(env), sendReminders(env, date, minutes)]));
+  },
 } satisfies ExportedHandler<Env>;

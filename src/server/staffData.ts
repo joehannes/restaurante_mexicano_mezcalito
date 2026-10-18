@@ -6,6 +6,8 @@ import type { ItemPatch, SettingKey, SpecialInput } from '../domain/adminInput';
 import { canMove, isOrderStatus, OPEN_STATUSES, type OrderStatus } from '../domain/orderStatus';
 import type { Role } from '../domain/roles';
 import type { OrderMode } from '../domain/types';
+import { waitUntil } from 'cloudflare:workers';
+import { notifyOrderStatus } from './notify';
 import { tellKitchen } from './orders';
 
 // ── Orders board ──────────────────────────────────────────────────────────
@@ -98,6 +100,7 @@ export async function moveOrder(env: Env, code: string, to: unknown, actor: stri
     tellKitchen(env, `order:${code}`, { status: to }),
     tellKitchen(env, 'board', { type: 'order.status', code, status: to }),
   ]);
+  waitUntil(notifyOrderStatus(env, code, to));
   return { ok: true, status: to, mode: order.mode };
 }
 
