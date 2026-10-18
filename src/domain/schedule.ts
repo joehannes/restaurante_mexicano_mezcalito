@@ -171,3 +171,13 @@ export function orderSlots(
   }
   return slots;
 }
+
+/** The dates a special runs on, from `from` (inclusive) for `days` days. */
+export function occurrences(special: Special, from: string, days: number): string[] {
+  const dates: string[] = [];
+  for (let i = 0; i < days; i++) {
+    const date = addDays(from, i);
+    if (runsOn(special, date)) dates.push(date);
+  }
+  return dates;
+}

@@ -188,3 +188,13 @@ describe('orderSlots', () => {
     expect(orderSlots(bavaro('2026-12-25', '10:00'), hours, [{ date: '2026-12-25', ranges: [] }], TZ)).toEqual([]);
   });
 });
+
+describe('occurrences', () => {
+  it('lists the coming dates of a weekly night, within its validity', async () => {
+    const { occurrences } = await import('./schedule');
+    const s = { id: 'tt', title: { en: 'Taco Tuesday' }, days: [2], start: '08:00', end: '24:00', active: true };
+    expect(occurrences(s, '2026-10-18', 14)).toEqual(['2026-10-20', '2026-10-27']);
+    expect(occurrences({ ...s, validTo: '2026-10-25' }, '2026-10-18', 14)).toEqual(['2026-10-20']);
+    expect(occurrences({ ...s, active: false }, '2026-10-18', 14)).toEqual([]);
+  });
+});
