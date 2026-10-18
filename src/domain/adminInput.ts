@@ -4,6 +4,7 @@
  * in the admin cannot break the guest-facing pages that read it back.
  */
 import type { DayOverride, ReservationRules } from './capacity';
+import type { SeasonBlock } from './seasonPresets';
 import { normalizePhone } from './orderInput';
 import type { Closure, DeliveryZone, Localized, PricingSettings, TimeRange, WeeklyHours } from './types';
 import { LOCALES } from './types';
@@ -161,6 +162,104 @@ export function parseSpecial(body: unknown): Parsed<SpecialInput> {
       itemIds,
       flyer: { bg: bg!, ink: ink!, ...(sticker ? { sticker } : {}) },
       active: b.active !== false,
+    },
+  };
+}
+
+// ── Seasons ───────────────────────────────────────────────────────────────
+
+export interface SeasonInput {
+  slug: string;
+  name: Localized;
+  startsOn: string;
+  endsOn: string;
+  priority: number;
+  published: boolean;
+  tokens: Record<string, string>;
+  hero: { kicker: Localized; headline: Localized; body: Localized; cta: 'order' | 'book' };
+  blocks: SeasonBlock[];
+  playlistUrl: string | null;
+  ogImage: string | null;
+}
+
+const MEDIA = /^\/media\/[\w./-]{1,120}$/;
+
+function parseBlock(v: unknown): SeasonBlock | undefined {
+  if (!isObject(v)) return undefined;
+  const ids = (list: unknown) =>
+    Array.isArray(list) && list.length <= 20 && list.every((i) => typeof i === 'string' && /^[a-z0-9-]{1,60}$/.test(i)) ? (list as string[]) : undefined;
+  switch (v.type) {
+    case 'story': {
+      const title = parseLocalized(v.title, 80);
+      const body = parseLocalized(v.body, 1200);
+      return title && body ? { type: 'story', title, body } : undefined;
+    }
+    case 'dishes': {
+      const title = parseLocalized(v.title, 80);
+      const itemIds = ids(v.itemIds);
+      return title && itemIds ? { type: 'dishes', title, itemIds } : undefined;
+    }
+    case 'nights': {
+      const specialIds = ids(v.specialIds);
+      return specialIds ? { type: 'nights', specialIds } : undefined;
+    }
+    case 'gallery': {
+      const ok = Array.isArray(v.images) && v.images.length <= 12 && v.images.every((i) => typeof i === 'string' && MEDIA.test(i));
+      return ok ? { type: 'gallery', images: v.images as string[] } : undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
+export function parseSeason(body: unknown): Parsed<SeasonInput> {
+  if (!isObject(body)) return { ok: false, errors: ['body'] };
+  const b = body;
+  const errors: string[] = [];
+  const slug = text(b.slug, 40);
+  if (!SLUG.test(slug)) errors.push('slug');
+  const name = parseLocalized(b.name, 60);
+  if (!name) errors.push('name');
+  if (!isDate(b.startsOn)) errors.push('startsOn');
+  if (!isDate(b.endsOn) || (isDate(b.startsOn) && b.endsOn < b.startsOn)) errors.push('endsOn');
+  const priority = isInt(b.priority, 0, 100) ? b.priority : (errors.push('priority'), 0);
+  // Only the palette's own colours, as plain hex, can be overridden.
+  const tokens: Record<string, string> = {};
+  if (!isObject(b.tokens)) errors.push('tokens');
+  else
+    for (const [k, v] of Object.entries(b.tokens)) {
+      const name = k.replace(/^--c-/, '');
+      if (!PALETTE.includes(name as never) || typeof v !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(v)) {
+        errors.push('tokens');
+        break;
+      }
+      tokens[`--c-${name}`] = v.toLowerCase();
+    }
+  const h = isObject(b.hero) ? b.hero : {};
+  const kicker = parseLocalized(h.kicker, 60);
+  const headline = parseLocalized(h.headline, 80);
+  const heroBody = parseLocalized(h.body, 300);
+  const cta = h.cta === 'order' || h.cta === 'book' ? h.cta : undefined;
+  if (!kicker || !headline || !heroBody || !cta) errors.push('hero');
+  const blocks = Array.isArray(b.blocks) && b.blocks.length <= 12 ? b.blocks.map(parseBlock) : [undefined];
+  if (!blocks.every(Boolean)) errors.push('blocks');
+  const playlistUrl = b.playlistUrl ? (typeof b.playlistUrl === 'string' && /^https:\/\/\S{4,300}$/.test(b.playlistUrl) ? b.playlistUrl : (errors.push('playlistUrl'), null)) : null;
+  const ogImage = b.ogImage ? (typeof b.ogImage === 'string' && MEDIA.test(b.ogImage) ? b.ogImage : (errors.push('ogImage'), null)) : null;
+  if (errors.length) return { ok: false, errors: [...new Set(errors)] };
+  return {
+    ok: true,
+    value: {
+      slug,
+      name: name!,
+      startsOn: b.startsOn as string,
+      endsOn: b.endsOn as string,
+      priority,
+      published: b.published === true,
+      tokens,
+      hero: { kicker: kicker!, headline: headline!, body: heroBody!, cta: cta! },
+      blocks: blocks as SeasonBlock[],
+      playlistUrl,
+      ogImage,
     },
   };
 }

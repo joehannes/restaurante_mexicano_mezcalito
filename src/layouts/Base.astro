@@ -15,9 +15,11 @@ interface Props {
   path?: string;
   /** CSS custom properties from the active season. */
   tokens?: Record<string, string>;
+  /** Share image path; the site-wide poster by default. */
+  image?: string;
 }
 
-const { locale, title, description, path = '/', tokens = {} } = Astro.props;
+const { locale, title, description, path = '/', tokens = {}, image = '/og.png' } = Astro.props;
 const site = Astro.site!.origin;
 const suffix = path === '/' ? '/' : path;
 // Only well-formed custom properties with plain colour values reach the page.
@@ -39,6 +41,9 @@ const skin = Object.entries(tokens)
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content={new URL(image, site).href} />
+    <meta property="og:url" content={`${site}/${locale}${suffix}`} />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#141210" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {skin && <style is:inline set:html={`:root{${skin}}`} />}

@@ -241,6 +241,14 @@ export const en = {
   'mail.reminder.subject': 'See you later at Mezcalito',
   'mail.reminder.body': 'Hi {name}! A reminder of your table today at {time} for {party}. Reservation {code}.',
 
+  'season.onNow': 'On now',
+  'season.starts': 'Starts {date}',
+  'season.ended': 'This rotation has ended — see you next year.',
+  'season.playlist': 'Listen to the playlist',
+  'season.see': 'Inside the {name} rotation',
+  'season.nights': 'The nights',
+  'season.preview': 'Preview — guests can’t see this yet.',
+
   'common.back': 'Back',
   'common.continue': 'Continue',
   'common.optional': 'optional',

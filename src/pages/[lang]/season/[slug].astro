@@ -1,0 +1,136 @@
+---
+/**
+ * A season's own page — where Instagram and TikTok links land. It always
+ * wears its own skin, even before or after its dates, and carries the
+ * rotation's story, dishes, nights, photos and playlist.
+ */
+import { env } from 'cloudflare:workers';
+import Site from '../../../layouts/Site.astro';
+import DishSingle from '../../../components/DishSingle.astro';
+import FlyerCard from '../../../components/FlyerCard.astro';
+import JsonLd from '../../../components/JsonLd.astro';
+import { localized } from '../../../domain/types';
+import { t } from '../../../i18n/ui';
+import { loadMenu } from '../../../server/menu';
+import { href, notFound, pageContext } from '../../../server/page';
+
+const ctx = await pageContext(Astro.params.lang, Astro.request);
+if (!ctx) return notFound();
+const { locale, site, today } = ctx;
+const season = ctx.seasons.find((s) => s.slug === Astro.params.slug);
+// Drafts exist only for staff previewing them.
+if (!season || (!season.published && !ctx.preview)) return notFound();
+
+const menu = await loadMenu(env.DB);
+const byId = new Map(menu.filter((i) => !i.hidden).map((i) => [i.id, i]));
+const nights = new Map(ctx.specials.filter((s) => s.active).map((s) => [s.id, s]));
+const dates = new Intl.DateTimeFormat({ en: 'en-US', es: 'es-DO', fr: 'fr-FR', de: 'de-DE' }[locale], { day: 'numeric', month: 'long', timeZone: 'UTC' });
+const fmt = (d: string) => dates.format(new Date(`${d}T12:00:00Z`));
+const state = today < season.startsOn ? 'upcoming' : today > season.endsOn ? 'ended' : 'live';
+const name = localized(season.name, locale);
+const origin = Astro.site!.origin;
+const event = {
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name: `${name} · Mezcalito Bar & Grill`,
+  description: localized(season.hero.body, locale),
+  startDate: season.startsOn,
+  endDate: season.endsOn,
+  eventStatus: 'https://schema.org/EventScheduled',
+  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  ...(season.ogImage ? { image: `${origin}${season.ogImage}` } : {}),
+  location: {
+    '@type': 'Place',
+    name: 'Mezcalito Bar & Grill',
+    address: { '@type': 'PostalAddress', streetAddress: site.address.street, addressLocality: site.address.locality, addressRegion: site.address.region, addressCountry: site.address.country },
+  },
+  organizer: { '@type': 'Organization', name: 'Mezcalito Bar & Grill', url: `${origin}/${locale}/` },
+};
+let flyer = 0;
+let side = 0;
+---
+<Site ctx={ctx} season={season} path={`/season/${season.slug}`} title={`${name} — Mezcalito Bar & Grill, Bávaro`} description={localized(season.hero.body, locale)}>
+  <JsonLd slot="head" data={event} />
+
+  <section class="relative overflow-hidden bg-mezcal text-cream">
+    <div class="papel-picado h-6" aria-hidden="true"></div>
+    <div class="mx-auto max-w-5xl px-4 pt-10 pb-14">
+      <p class="flex flex-wrap items-center gap-3 font-display tracking-wide text-gold uppercase">
+        {localized(season.hero.kicker, locale)}
+        <span class="sticker bg-gold text-sm text-ink" style="--tilt:-3deg">
+          {state === 'live' ? t(locale, 'season.onNow') : `${fmt(season.startsOn)} – ${fmt(season.endsOn)}`}
+        </span>
+      </p>
+      <h1 class="mt-3 font-display text-5xl leading-[0.95] uppercase md:text-7xl">{localized(season.hero.headline, locale)}</h1>
+      <p class="mt-4 max-w-2xl text-lg">{localized(season.hero.body, locale)}</p>
+      {state === 'ended' ? (
+        <p class="mt-6 font-semibold">{t(locale, 'season.ended')}</p>
+      ) : (
+        <p class="mt-6 flex flex-wrap gap-3">
+          {(season.hero.cta === 'book' ? ['/reserve', '/menu'] : ['/menu', '/reserve']).map((p, i) => (
+            <a
+              href={href(locale, p)}
+              class:list={[
+                'rounded-full px-7 py-3 text-lg font-bold',
+                i === 0 ? 'cone bg-hibiscus text-cream shadow-[4px_4px_0_var(--c-ink)]' : 'border-2 border-cream',
+              ]}
+            >
+              {t(locale, p === '/reserve' ? 'hero.book' : 'hero.order')}
+            </a>
+          ))}
+        </p>
+      )}
+      {season.playlistUrl && (
+        <p class="mt-6">
+          <a href={season.playlistUrl} class="inline-flex items-center gap-2 font-bold underline decoration-gold decoration-4 underline-offset-4" rel="noopener">
+            ♫ {t(locale, 'season.playlist')}
+          </a>
+        </p>
+      )}
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-5xl space-y-14 px-4 pt-12">
+    {season.blocks.map((block) => {
+      if (block.type === 'story')
+        return (
+          <section>
+            <h2 class="font-display text-4xl uppercase">{localized(block.title, locale)}</h2>
+            <p class="mt-3 max-w-3xl text-lg leading-relaxed">{localized(block.body, locale)}</p>
+          </section>
+        );
+      if (block.type === 'dishes') {
+        const dishes = block.itemIds.map((id) => byId.get(id)).filter((i) => !!i);
+        return dishes.length > 0 && (
+          <section>
+            <h2 class="font-display text-4xl uppercase">{localized(block.title, locale)}</h2>
+            <div class="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-4">
+              {dishes.map((item) => {
+                const n = side++;
+                return <DishSingle item={item!} locale={locale} side={`${n % 2 ? 'B' : 'A'}${Math.floor(n / 2) + 1}`} />;
+              })}
+            </div>
+          </section>
+        );
+      }
+      if (block.type === 'nights') {
+        const list = block.specialIds.map((id) => nights.get(id)).filter((s) => !!s);
+        return list.length > 0 && (
+          <section>
+            <h2 class="font-display text-4xl uppercase">{t(locale, 'season.nights')}</h2>
+            <div class="mt-6 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {list.map((s) => <FlyerCard special={s!} locale={locale} index={flyer++} />)}
+            </div>
+          </section>
+        );
+      }
+      return (
+        <section class="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {block.images.map((src) => (
+            <img src={src} alt="" loading="lazy" decoding="async" class="aspect-square w-full rounded-2xl object-cover" />
+          ))}
+        </section>
+      );
+    })}
+  </div>
+</Site>

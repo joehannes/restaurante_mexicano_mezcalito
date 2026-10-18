@@ -9,6 +9,7 @@
  */
 import type { ClockTime, Localized, TimeRange } from '../src/domain/types';
 import type { ReservationRules } from '../src/domain/capacity';
+import { draftFromPreset, type SeasonDraft } from '../src/domain/seasonPresets.ts';
 
 const L = (en: string, es: string, fr: string, de: string): Localized => ({ en, es, fr, de });
 /** Proper names (Rasta Pasta, Quesabirria, Festival) stay as they are on the menu. */
@@ -658,59 +659,15 @@ export const specials: SeedSpecial[] = [
   },
 ];
 
-export interface SeedSeason {
-  slug: string;
-  name: Localized;
-  startsOn: string;
-  endsOn: string;
-  priority: number;
+export interface SeedSeason extends SeasonDraft {
   published: boolean;
-  tokens: Record<string, string>;
-  hero: { kicker: Localized; headline: Localized; body: Localized; cta: 'order' | 'book' };
 }
 
+// Seasons start from the presets the admin offers; Día de Muertos is live
+// for launch, Christmas waits as a draft.
 export const seasons: SeedSeason[] = [
-  {
-    slug: 'dia-de-muertos',
-    name: L('Día de Muertos', 'Día de Muertos', 'Día de Muertos', 'Día de Muertos'),
-    startsOn: '2026-10-24',
-    endsOn: '2026-11-03',
-    priority: 10,
-    published: true,
-    // Marigold, candle-light and mezcal purple over the night-time ink.
-    tokens: { '--c-gold': '#f59f0b', '--c-hibiscus': '#e8287f', '--c-mezcal': '#5b2a86', '--c-cream': '#fff3df' },
-    hero: {
-      kicker: L('New rotation', 'Nueva rotación', 'Nouvelle rotation', 'Neue Rotation'),
-      headline: L('Half calavera. Whole heart.', 'Media calavera. Corazón entero.', 'Mi-calavera. Tout le cœur.', 'Halb Calavera. Ganzes Herz.'),
-      body: L(
-        'Marigolds on the terrace, candles on the bar and the sound system playing for the ones we remember. 1–2 November.',
-        'Cempasúchil en la terraza, velas en la barra y el sound system tocando por los que recordamos. 1–2 de noviembre.',
-        'Des œillets d’Inde sur la terrasse, des bougies au bar et le sound system pour ceux dont on se souvient. 1–2 novembre.',
-        'Tagetes auf der Terrasse, Kerzen an der Bar und das Soundsystem für die, an die wir denken. 1.–2. November.',
-      ),
-      cta: 'book',
-    },
-  },
-  {
-    slug: 'navidad-caribena',
-    name: L('Navidad Caribeña', 'Navidad Caribeña', 'Noël caribéen', 'Karibische Weihnacht'),
-    startsOn: '2026-12-01',
-    endsOn: '2027-01-06',
-    priority: 5,
-    published: false,
-    tokens: { '--c-hibiscus': '#d7263d', '--c-jungle': '#1f7a3a', '--c-gold': '#f2c14e' },
-    hero: {
-      kicker: L('Holiday rotation', 'Rotación navideña', 'Rotation des fêtes', 'Festtags-Rotation'),
-      headline: L('Sorrel season is here.', 'Llegó la temporada de sorrel.', 'C’est la saison du sorrel.', 'Sorrel-Saison ist da.'),
-      body: L(
-        'Jamaican sorrel, Mexican ponche and a Christmas line-up on the sound system.',
-        'Sorrel jamaiquino, ponche mexicano y una programación navideña en el sound system.',
-        'Sorrel jamaïcain, ponche mexicain et une programmation de Noël sur le sound system.',
-        'Jamaikanischer Sorrel, mexikanischer Ponche und ein Weihnachts-Line-up vom Soundsystem.',
-      ),
-      cta: 'book',
-    },
-  },
+  { ...draftFromPreset('dia-de-muertos', '2026-10-18')!, published: true },
+  { ...draftFromPreset('navidad-caribena', '2026-10-18')!, published: false },
 ];
 
 const daily = (open: ClockTime, close: ClockTime): TimeRange[][] => Array.from({ length: 7 }, () => [{ open, close }]);

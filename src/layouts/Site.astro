@@ -7,7 +7,9 @@ import Base from './Base.astro';
 import BottomBar from '../components/BottomBar.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import type { SeasonRecord } from '../server/content';
 import type { PageContext } from '../server/page';
+import { t } from '../i18n/ui';
 
 interface Props {
   ctx: PageContext;
@@ -15,11 +17,16 @@ interface Props {
   description: string;
   /** Path after the locale, e.g. `/menu`. */
   path: string;
+  /** Wear this season's skin instead of the one that is live (a season's own page). */
+  season?: SeasonRecord;
 }
 const { ctx, title, description, path } = Astro.props;
+const season = Astro.props.season ?? ctx.season;
+if (ctx.preview) Astro.response.headers.set('cache-control', 'no-store');
 ---
-<Base locale={ctx.locale} title={title} description={description} path={path} tokens={ctx.season?.tokens}>
+<Base locale={ctx.locale} title={title} description={description} path={path} tokens={season?.tokens} image={season?.ogImage ?? undefined}>
   <slot name="head" slot="head" />
+  {ctx.preview && <p class="bg-sunset px-4 py-2 text-center text-sm font-bold text-cream">{t(ctx.locale, 'season.preview')}</p>}
   <Header locale={ctx.locale} path={path} />
   <main id="main">
     <slot />

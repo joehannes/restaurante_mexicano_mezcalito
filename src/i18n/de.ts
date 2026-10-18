@@ -242,6 +242,14 @@ export const de: Record<UiKey, string> = {
   'mail.reminder.subject': 'Bis später im Mezcalito',
   'mail.reminder.body': 'Hallo {name}! Kleine Erinnerung an deinen Tisch heute um {time} für {party}. Reservierung {code}.',
 
+  'season.onNow': 'Jetzt',
+  'season.starts': 'Ab {date}',
+  'season.ended': 'Diese Rotation ist vorbei — bis nächstes Jahr.',
+  'season.playlist': 'Hör dir die Playlist an',
+  'season.see': 'Mehr zur Rotation {name}',
+  'season.nights': 'Die Abende',
+  'season.preview': 'Vorschau — Gäste sehen das noch nicht.',
+
   'common.back': 'Zurück',
   'common.continue': 'Weiter',
   'common.optional': 'optional',

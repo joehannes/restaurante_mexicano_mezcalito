@@ -298,7 +298,7 @@ function ItemEditor({
         <Field label={dict['menu.tags']}>
           <input value={tags} onChange={(e) => setTags(e.target.value)} className={`${input} ${bad('tags')}`} />
         </Field>
-        <Field label={dict['menu.photo']}>
+        <Field label={dict['menu.photo']} group>
           <PhotoField value={photo} onChange={setPhoto} dict={dict} />
         </Field>
         <label className="flex items-center gap-2 font-semibold">

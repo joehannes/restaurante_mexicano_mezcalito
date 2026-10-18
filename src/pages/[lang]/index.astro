@@ -13,7 +13,7 @@ import { t } from '../../i18n/ui';
 import { loadMenu } from '../../server/menu';
 import { href, notFound, pageContext } from '../../server/page';
 
-const ctx = await pageContext(Astro.params.lang);
+const ctx = await pageContext(Astro.params.lang, Astro.request);
 if (!ctx) return notFound();
 const { locale, site } = ctx;
 

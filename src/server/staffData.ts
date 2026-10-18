@@ -2,7 +2,7 @@
  * Reads and writes behind the staff admin. Guests never reach these; every
  * caller has passed `guard` and every input has passed `domain/adminInput`.
  */
-import type { ItemPatch, SettingKey, SpecialInput } from '../domain/adminInput';
+import type { ItemPatch, SeasonInput, SettingKey, SpecialInput } from '../domain/adminInput';
 import { canMove, isOrderStatus, OPEN_STATUSES, type OrderStatus } from '../domain/orderStatus';
 import type { Role } from '../domain/roles';
 import type { OrderMode } from '../domain/types';
@@ -209,6 +209,36 @@ export async function deleteSpecial(db: D1Database, id: string) {
 /** Saves the line-up order: `ids` first to last. */
 export async function orderSpecials(db: D1Database, ids: string[]) {
   await db.batch(ids.map((id, i) => db.prepare('UPDATE specials SET position = ? WHERE id = ?').bind(i, id)));
+}
+
+// ── Seasons ───────────────────────────────────────────────────────────────
+
+export async function saveSeason(db: D1Database, s: SeasonInput) {
+  await db
+    .prepare(
+      `INSERT INTO seasons (slug, name, starts_on, ends_on, priority, published, tokens, hero, blocks, playlist_url, og_image)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+       ON CONFLICT (slug) DO UPDATE SET name = ?2, starts_on = ?3, ends_on = ?4, priority = ?5, published = ?6, tokens = ?7, hero = ?8,
+         blocks = ?9, playlist_url = ?10, og_image = ?11, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`,
+    )
+    .bind(
+      s.slug,
+      JSON.stringify(s.name),
+      s.startsOn,
+      s.endsOn,
+      s.priority,
+      Number(s.published),
+      JSON.stringify(s.tokens),
+      JSON.stringify(s.hero),
+      JSON.stringify(s.blocks),
+      s.playlistUrl,
+      s.ogImage,
+    )
+    .run();
+}
+
+export async function deleteSeason(db: D1Database, slug: string) {
+  return (await db.prepare('DELETE FROM seasons WHERE slug = ?').bind(slug).run()).meta.changes > 0;
 }
 
 // ── Reservations and party requests ───────────────────────────────────────

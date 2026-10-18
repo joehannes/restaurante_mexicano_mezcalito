@@ -10,13 +10,15 @@ export const input = `${field} w-full`;
 export const button = 'rounded-full bg-ink px-4 py-2 text-sm font-bold text-cream disabled:opacity-40';
 export const ghost = 'rounded-full border-2 border-ink/20 px-3 py-1.5 text-sm font-semibold disabled:opacity-40';
 
-export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+/** A labelled control. `group` is for several controls under one heading (no wrapping label). */
+export function Field({ label, children, hint, group }: { label: string; children: ReactNode; hint?: string; group?: boolean }) {
+  const Tag = group ? 'div' : 'label';
   return (
-    <label className="block">
+    <Tag className="block">
       <span className="mb-1 block text-sm font-semibold">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-ink/60">{hint}</span>}
-    </label>
+    </Tag>
   );
 }
 

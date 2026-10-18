@@ -51,6 +51,7 @@ export function seedRows() {
       published: s.published,
       tokens: s.tokens,
       hero: s.hero,
+      blocks: s.blocks,
     })),
     settings: Object.entries(settings).map(([key, value]) => ({ key, value })),
   };

@@ -127,6 +127,13 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
         {t(locale, 'hero.book')}
       </a>
     </div>
+    {season && (
+      <p class="mt-5">
+        <a href={href(locale, `/season/${season.slug}`)} class="font-bold underline decoration-gold decoration-4 underline-offset-4">
+          {t(locale, 'season.see', { name: localized(season.name, locale) })} →
+        </a>
+      </p>
+    )}
   </div>
 </section>
 

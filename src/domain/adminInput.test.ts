@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { settings, specials } from '../../seed/data';
-import { parseItemPatch, parseLocalized, parseSetting, parseSpecial } from './adminInput';
+import { parseItemPatch, parseLocalized, parseSeason, parseSetting, parseSpecial } from './adminInput';
+import { draftFromPreset, PRESETS } from './seasonPresets';
 
 describe('parseLocalized', () => {
   it('needs English and drops empty translations', () => {
@@ -72,5 +73,21 @@ describe('parseSetting', () => {
     const zone = { id: 'cortecito', name: 'El Cortecito', fee: 15_000, minOrder: 50_000, polygon: [[-68.43, 18.69], [-68.42, 18.69], [-68.42, 18.70]] };
     expect(parseSetting('deliveryZones', [zone]).ok).toBe(true);
     expect(parseSetting('deliveryZones', [{ ...zone, polygon: [[0, 0]] }]).ok).toBe(false);
+  });
+});
+
+describe('parseSeason', () => {
+  const draft = draftFromPreset('dia-de-muertos', '2026-10-18')!;
+  it('accepts every preset as a draft', () => {
+    for (const p of PRESETS) expect(parseSeason({ ...draftFromPreset(p.slug, '2026-10-18'), published: false }).ok, p.slug).toBe(true);
+  });
+  it('keeps only palette colours as hex', () => {
+    expect(parseSeason({ ...draft, tokens: { '--c-gold': '#F59F0B' } })).toMatchObject({ ok: true, value: { tokens: { '--c-gold': '#f59f0b' } } });
+    expect(parseSeason({ ...draft, tokens: { '--c-gold': 'red;}body{display:none' } })).toMatchObject({ ok: false, errors: ['tokens'] });
+    expect(parseSeason({ ...draft, tokens: { '--font-display': '#000000' } })).toMatchObject({ ok: false, errors: ['tokens'] });
+  });
+  it('rejects inverted dates, unknown blocks and outside images', () => {
+    const r = parseSeason({ ...draft, endsOn: '2026-01-01', blocks: [{ type: 'iframe', src: 'x' }], ogImage: 'https://evil.example/og.png' });
+    expect(r).toEqual({ ok: false, errors: ['endsOn', 'blocks', 'ogImage'] });
   });
 });

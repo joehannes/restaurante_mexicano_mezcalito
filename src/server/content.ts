@@ -1,6 +1,7 @@
 /**
  * Site-wide content read on almost every page: settings, nights, seasons.
  */
+import type { SeasonBlock } from '../domain/seasonPresets';
 import type { Closure, Localized, Season, Special, WeeklyHours } from '../domain/types';
 
 export interface SiteSettings {
@@ -26,6 +27,9 @@ export interface SeasonRecord extends Season {
   name: Localized;
   tokens: Record<string, string>;
   hero: { kicker: Localized; headline: Localized; body: Localized; cta: 'order' | 'book' };
+  blocks: SeasonBlock[];
+  playlistUrl: string | null;
+  ogImage: string | null;
 }
 
 const parse = <T>(json: string | null): T => (json ? JSON.parse(json) : undefined) as T;
@@ -58,7 +62,7 @@ export async function loadSite(db: D1Database) {
     }),
   );
 
-  const seasonRecords = (seasons!.results as Record<string, string | number>[]).map(
+  const seasonRecords = (seasons!.results as Record<string, string | number | null>[]).map(
     (r): SeasonRecord => ({
       slug: String(r.slug),
       name: parse(r.name as string),
@@ -68,8 +72,11 @@ export async function loadSite(db: D1Database) {
       published: !!r.published,
       tokens: parse(r.tokens as string),
       hero: parse(r.hero as string),
+      blocks: parse(r.blocks as string),
+      playlistUrl: (r.playlist_url as string | null) ?? null,
+      ogImage: (r.og_image as string | null) ?? null,
     }),
   );
 
-  return { site, specials: specialRecords, seasons: seasonRecords };
+  return { site, specials: specialRecords, seasons: seasonRecords.sort((a, b) => a.startsOn.localeCompare(b.startsOn)) };
 }
