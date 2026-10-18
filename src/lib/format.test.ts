@@ -27,6 +27,7 @@ describe('formatClock', () => {
     expect(formatClock('17:30', 'en')).toBe('5:30 pm');
     expect(formatClock('12:00', 'en')).toBe('12 pm');
     expect(formatClock('17:30', 'es')).toBe('17:30');
-    expect(formatClock('24:00', 'de')).toBe('00:00');
+    expect(formatClock('24:00', 'de')).toBe('24:00');
+    expect(formatClock('00:30', 'es')).toBe('00:30');
   });
 });

@@ -32,6 +32,9 @@ export function negotiate(header: string | null): Locale {
 
 const dictionaries: Record<Locale, Record<UiKey, string>> = { en, es, fr, de };
 
+/** One locale's whole dictionary, to hand to an island as a prop. */
+export const dictionary = (locale: Locale) => dictionaries[locale];
+
 export const t = (locale: Locale, key: UiKey, vars: Record<string, string | number> = {}) =>
   dictionaries[locale][key].replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name] ?? ''));
 

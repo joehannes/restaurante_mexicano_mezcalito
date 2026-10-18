@@ -31,7 +31,8 @@ export const formatUsd = (centavos: number, pesosPerDollar: number, locale: Loca
 export function formatClock(time: ClockTime, locale: Locale): string {
   const [h = 0, m = 0] = time.split(':').map(Number);
   const hour = h % 24;
-  if (locale !== 'en') return `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  // "24:00" is a closing time; 24-hour locales write it as such.
+  if (locale !== 'en') return `${String(h === 24 ? 24 : hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   const h12 = hour % 12 || 12;
   return `${h12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${hour < 12 ? 'am' : 'pm'}`;
 }

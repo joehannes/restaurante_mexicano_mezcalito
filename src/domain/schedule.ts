@@ -149,3 +149,25 @@ export function daypart(now: Date, timeZone: string): Daypart {
   if (m >= 17 * 60 && m < 19 * 60 + 30) return 'sunset';
   return 'night';
 }
+
+/**
+ * Times a guest can schedule an order for, later today: every quarter hour
+ * from `leadMinutes` from now, up to `lastOrderMinutes` before each closing.
+ */
+export function orderSlots(
+  now: Date,
+  hours: WeeklyHours,
+  closures: readonly Closure[],
+  timeZone: string,
+  { leadMinutes = 45, stepMinutes = 15, lastOrderMinutes = 30 } = {},
+): ClockTime[] {
+  const { date, minutes } = localNow(now, timeZone);
+  const earliest = Math.ceil((minutes + leadMinutes) / stepMinutes) * stepMinutes;
+  const slots: ClockTime[] = [];
+  for (const range of rangesOn(date, hours, closures)) {
+    const [open, close] = span(range);
+    const last = Math.min(close, DAY) - lastOrderMinutes;
+    for (let t = Math.max(open, earliest); t <= last; t += stepMinutes) slots.push(formatClock(t));
+  }
+  return slots;
+}

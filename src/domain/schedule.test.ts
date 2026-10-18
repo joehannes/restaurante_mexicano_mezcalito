@@ -170,3 +170,21 @@ describe('daypart', () => {
     expect(daypart(bavaro('2026-10-21', '05:00'), TZ)).toBe('morning');
   });
 });
+
+describe('orderSlots', () => {
+  const hours = daily('08:00', '24:00');
+  it('offers today’s pickup times from the lead time until half an hour before closing', async () => {
+    const { orderSlots } = await import('./schedule');
+    const slots = orderSlots(bavaro('2026-10-20', '21:50'), hours, [], TZ);
+    expect(slots).toEqual(['22:45', '23:00', '23:15', '23:30']);
+  });
+  it('starts at opening when it is still early, and is empty after the last slot', async () => {
+    const { orderSlots } = await import('./schedule');
+    expect(orderSlots(bavaro('2026-10-20', '06:00'), hours, [], TZ)[0]).toBe('08:00');
+    expect(orderSlots(bavaro('2026-10-20', '23:20'), hours, [], TZ)).toEqual([]);
+  });
+  it('honours closures', async () => {
+    const { orderSlots } = await import('./schedule');
+    expect(orderSlots(bavaro('2026-12-25', '10:00'), hours, [{ date: '2026-12-25', ranges: [] }], TZ)).toEqual([]);
+  });
+});

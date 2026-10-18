@@ -106,3 +106,13 @@ export async function loadMenu(db: D1Database): Promise<MenuItem[]> {
     itemGroups: itemGroups!.results as unknown as ItemGroupRow[],
   });
 }
+
+export interface Category {
+  id: string;
+  name: Localized;
+}
+
+export async function loadCategories(db: D1Database): Promise<Category[]> {
+  const { results } = await db.prepare('SELECT id, name FROM categories WHERE hidden = 0 ORDER BY position').all<{ id: string; name: string }>();
+  return results.map((r) => ({ id: r.id, name: text(r.name) }));
+}

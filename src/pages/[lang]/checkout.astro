@@ -1,0 +1,36 @@
+---
+import { env } from 'cloudflare:workers';
+import Site from '../../layouts/Site.astro';
+import Checkout from '../../islands/Checkout';
+import { orderSlots } from '../../domain/schedule';
+import { dictionary, t, when } from '../../i18n/ui';
+import { loadMenu } from '../../server/menu';
+import { href, notFound, pageContext } from '../../server/page';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale, site, status } = ctx;
+const menu = (await loadMenu(env.DB)).filter((i) => !i.hidden);
+const slots = orderSlots(ctx.now, site.hours, site.closures, ctx.tz);
+Astro.response.headers.set('cache-control', 'no-store');
+---
+<Site ctx={ctx} path="/checkout" title={`${t(locale, 'checkout.title')} — Mezcalito`} description={t(locale, 'home.howItWorks')}>
+  <meta slot="head" name="robots" content="noindex" />
+  <div class="mx-auto max-w-5xl px-4 pt-8 pb-4">
+    <h1 class="font-display text-5xl uppercase">{t(locale, 'checkout.title')}</h1>
+  </div>
+  <Checkout
+    client:load
+    locale={locale}
+    dict={dictionary(locale)}
+    menu={menu}
+    pricing={site.pricing}
+    slots={slots}
+    open={status.open}
+    opensWhen={!status.open && status.opensAt ? when(status.opensAt, ctx.today, locale) : undefined}
+    deliveryAvailable={(site.deliveryZones ?? []).length > 0}
+    uberEatsUrl={site.social.ubereats}
+    menuHref={href(locale, '/menu')}
+    orderHref={href(locale, '/o')}
+  />
+</Site>

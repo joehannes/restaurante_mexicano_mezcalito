@@ -1,0 +1,104 @@
+---
+/**
+ * The guest's order page. Status for anyone with the code; the items and
+ * the guest's first name only with the private key from checkout. Updates
+ * live over a WebSocket, with a slow poll as the fallback.
+ */
+import { env } from 'cloudflare:workers';
+import Site from '../../../layouts/Site.astro';
+import { localized, type Localized } from '../../../domain/types';
+import { formatClock, formatPrice } from '../../../lib/format';
+import { t } from '../../../i18n/ui';
+import { loadOrder } from '../../../server/orders';
+import { notFound, pageContext } from '../../../server/page';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale, site } = ctx;
+const code = String(Astro.params.code ?? '').toUpperCase();
+const key = Astro.url.searchParams.get('k');
+const order = /^MZ-[A-Z0-9]{4}$/.test(code) ? await loadOrder(env.DB, code, key) : undefined;
+Astro.response.headers.set('cache-control', 'no-store');
+if (!order) Astro.response.status = 404;
+
+const steps = order?.mode === 'delivery'
+  ? ['received', 'preparing', 'on_the_way', 'done']
+  : ['received', 'preparing', 'ready', 'done'];
+const current = order ? steps.indexOf(order.status) : -1;
+const labels = Object.fromEntries(
+  ['awaiting_payment', 'received', 'preparing', 'ready', 'on_the_way', 'done', 'cancelled'].map((s) => [s, t(locale, `order.status.${s}` as 'order.status.received')]),
+);
+const wa = `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`${code}`)}`;
+---
+<Site ctx={ctx} path={`/o/${code}`} title={order ? t(locale, 'order.title', { code }) : t(locale, 'order.notFound')} description={t(locale, 'order.live')}>
+  <meta slot="head" name="robots" content="noindex" />
+  <div class="mx-auto max-w-2xl px-4 pt-10 pb-24">
+    {!order ? (
+      <p class="py-16 text-center text-lg">{t(locale, 'order.notFound')}</p>
+    ) : (
+      <>
+        <p class="font-display text-gold uppercase">{t(locale, 'order.title', { code })}</p>
+        {order.customerName && <h1 class="mt-1 font-display text-4xl uppercase">{t(locale, 'order.thanks', { name: order.customerName })}</h1>}
+
+        <ol class="mt-8 grid grid-cols-4 gap-2" data-steps={JSON.stringify(steps)} id="steps">
+          {steps.map((s, i) => (
+            <li class:list={['rounded-xl px-2 py-3 text-center text-sm font-bold', i <= current ? 'bg-jungle text-cream' : 'bg-ink/10']} data-step={s}>
+              {labels[s]}
+            </li>
+          ))}
+        </ol>
+        <p class="mt-3 text-center text-sm text-ink/60" id="status-line" data-labels={JSON.stringify(labels)}>
+          <span id="status-text">{labels[order.status]}</span> · {t(locale, 'order.live')}
+        </p>
+        {order.scheduledFor && <p class="mt-2 text-center font-semibold">{formatClock(order.scheduledFor, locale)}</p>}
+
+        {order.items && (
+          <ul class="mt-8 divide-y divide-ink/10 rounded-2xl bg-white">
+            {order.items.map((item) => (
+              <li class="flex justify-between gap-3 p-4">
+                <span>{item.qty} × {localized(JSON.parse(item.name) as Localized, locale)}{item.note && <span class="block text-sm text-ink/60">“{item.note}”</span>}</span>
+                <span class="font-bold">{formatPrice(item.lineTotal, locale)}</span>
+              </li>
+            ))}
+            <li class="flex justify-between p-4 font-bold"><span>{t(locale, 'cart.total')}</span><span>{formatPrice(order.total, locale)}</span></li>
+          </ul>
+        )}
+
+        <p class="mt-8 text-center">
+          <a href={wa} class="inline-block rounded-full bg-jungle px-6 py-3 font-bold text-cream">{t(locale, 'order.whatsapp')}</a>
+        </p>
+      </>
+    )}
+  </div>
+</Site>
+
+{order && (
+  <script is:inline define:vars={{ code }}>
+    const steps = JSON.parse(document.getElementById('steps').dataset.steps);
+    const labels = JSON.parse(document.getElementById('status-line').dataset.labels);
+    const paint = (status) => {
+      const at = steps.indexOf(status);
+      document.querySelectorAll('[data-step]').forEach((el, i) => {
+        el.classList.toggle('bg-jungle', i <= at);
+        el.classList.toggle('text-cream', i <= at);
+        el.classList.toggle('bg-ink/10', i > at);
+      });
+      document.getElementById('status-text').textContent = labels[status] ?? status;
+    };
+    const poll = () =>
+      fetch(`/api/order/${code}`).then((r) => r.json()).then((o) => o.status && paint(o.status)).catch(() => {});
+    let timer = setInterval(poll, 30000);
+    const connect = () => {
+      const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?tag=order:${code}`);
+      ws.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.status) paint(data.status);
+        } catch {}
+      };
+      ws.onclose = () => setTimeout(connect, 5000);
+    };
+    connect();
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && poll());
+  </script>
+)}
