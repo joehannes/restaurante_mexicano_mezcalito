@@ -27,5 +27,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
     return json({ error: result.error, detail: result.detail }, 409);
   }
+  try {
+    env.EVENTS.writeDataPoint({ indexes: ['order'], blobs: ['order', parsed.value.mode, parsed.value.payment, parsed.value.locale], doubles: [result.total] });
+  } catch {}
   return json({ code: result.code, key: result.key, total: result.total }, 201);
 };

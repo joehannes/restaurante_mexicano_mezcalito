@@ -54,6 +54,13 @@ export default {
       const board = new URL('https://kitchen/ws?tag=board');
       return env.KITCHEN.get(env.KITCHEN.idFromName('kitchen')).fetch(new Request(board, request));
     }
+    const localized = url.pathname.match(/^\/(en|es|fr|de)(\/.*)?$/);
+    if (request.method === 'GET' && localized) {
+      // A visit, counted here so edge-cached pages count too: path and language only.
+      try {
+        env.EVENTS.writeDataPoint({ indexes: ['view'], blobs: ['view', (localized[2] ?? '/').replace(/^\/(o|season)\/.*/, '/$1'), localized[1]!], doubles: [1] });
+      } catch {}
+    }
     if (!import.meta.env.DEV && request.method === 'GET' && !url.search && CACHEABLE.test(url.pathname)) return cachedPage(request, env, ctx);
     return astro.fetch(request, env, ctx);
   },
