@@ -12,7 +12,12 @@
     { "binding": "DB", "database_name": "mezcalito", "database_id": "d959a574-b8c0-4651-8995-ce2710a9c805", "migrations_dir": "migrations" }
   ],
   // Bumped on every staff save so edge-cached pages are rebuilt.
-  "kv_namespaces": [{ "binding": "CACHE", "id": "2aace4b6d03f46f7914c64627643f7ba" }],
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "2aace4b6d03f46f7914c64627643f7ba" },
+    // Astro's session store. The adapter asks for it; declaring the namespace a
+    // failed first deploy created stops wrangler from trying to create it again.
+    { "binding": "SESSION", "id": "d35966c4096c4e5698ef0660de131117" }
+  ],
   // Photos, flyers, voice clips and music beds.
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "mezcalito-media" }],
   "ai": { "binding": "AI" },
