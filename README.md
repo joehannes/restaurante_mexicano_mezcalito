@@ -10,12 +10,27 @@
 - strong mobile, performance and SEO
 
 **Decisions so far:**
-- The build is **brand-new** in its own repo, `joehannes/restaurante_mexicano_mezcalito` (currently empty), with its own ideas and architecture and nothing shared with nahiatours.
+- The build is **brand-new** in its own repo, `joehannes/restaurante_mexicano_mezcalito`, with its own ideas and architecture and nothing shared with nahiatours.
 - **Concept:** "Sound System". **Stack:** Astro + React islands on Cloudflare Workers.
 - **Languages at launch:** EN, ES, FR and DE. **Ordering:** our own checkout, paid on pickup or online.
 - **Visuals:** illustration and texture carry the concept; Mezcalito's real food and venue photos sell the plates.
 - **Playfulness:** "playful but quick". Home, Tonight, Season, Selector and Radio carry full motion and personality. Menu, cart and checkout stay calm, plain and fast, with the concept only in accents (badge stickers, the cart-pill bounce).
 - **Independence from nahiatours:** the research was done on Mezcalito directly (their site, source code, menu, photos, video frames, reviews, competitors). The architecture below assumes nothing from nahiatours and reuses none of its code.
+
+## Where it stands
+
+All seven phases below are built, tested and running locally; what is left needs accounts, the owner's answers or licences (see **Prerequisites and open items**). How to run, configure and deploy it is in [docs/development.md](docs/development.md).
+
+| Phase | State |
+|---|---|
+| 1. Scaffold | Done: Astro 7 on Workers, D1 schema and seed from the real menu, tested domain core, CI. |
+| 2. Public site | Done: time-aware home, menu = order page, checkout, live order page, Reserve, Tonight, Story, Parties, Find us, JSON-LD, sitemap, 301s. |
+| 3. Staff admin | Done: Access sign-in with roles, live orders board, menu with 86 switches, nights & offers, bookings, settings, staff, R2 uploads. |
+| 4. Payments and messages | Done in code: Azul and PayPal, WhatsApp templates, email. Switched off until the merchant and Meta accounts exist. |
+| 5. Seasons | Done: eight presets, a page per season, staff previews, generated share images. Día de Muertos is published for 24 Oct – 3 Nov. |
+| 6. Selector and Radio | Done: Workers AI with a rules fallback; voiced Radio over a synthesized riddim. |
+| 7. Polish | Done: PWA with offline menu, QR table mode, reorder, insights, edge caching, perf pass (home ships 1.9 KB of JS). |
+
 
 ---
 
@@ -197,7 +212,7 @@ Sources:
 ## PART D — Architecture (fresh repo)
 
 **Stack:**
-- **Astro 5** (server output, `@astrojs/cloudflare` adapter) with **React 19 islands** for the cart, item sheet, checkout, reserve, Selector, Radio and the admin app.
+- **Astro 7** (server output, `@astrojs/cloudflare` adapter) with **React 19 islands** for the cart, item sheet, checkout, reserve, Selector, Radio and the admin app.
 - **Tailwind CSS v4**, with `@theme` tokens pointing at CSS variables. TypeScript strict mode.
 - **Hosting:** Cloudflare Workers with static assets.
 
@@ -226,7 +241,7 @@ Sources:
   - `radioTree.ts`: walking the tree, scoring outcomes
 - `src/server/`: D1 repositories, `notify/` (WhatsApp Cloud API templates with wa.me fallback; Resend email), `payments/` (provider interface → `azul.ts`, `paypal.ts`, `cash.ts`), `ai/`, `access.ts` (verifies the `Cf-Access-Jwt-Assertion` header and roles: owner, manager, kitchen).
 - `src/i18n/`: EN, ES, FR, DE UI dictionaries. Content translations live in D1.
-- `src/styles/tokens.css`: the default skin. Seasons inject overriding variables server-side in `<head>`.
+- `src/styles/global.css`: the default skin. Seasons inject overriding variables server-side in `<head>`.
 - `seed/`: the menu, nights and settings from Part A as SQL or JSON seeds.
 
 **Key flows:**
@@ -283,8 +298,11 @@ Sources:
 - Google Rich Results test for Restaurant, Menu and Event. Lighthouse SEO and a11y ≥ 95.
 
 ## Prerequisites and open items
-- **Push access** to `joehannes/restaurante_mexicano_mezcalito`. The session currently has read-only access, and the repo is empty. Connect GitHub and install the Claude app on it, then re-attach.
-- **Cloudflare account and API token** for the new Worker, D1, R2 and DO. **Domain:** take over mezcalitobarandgrill.com from VAS (needs DNS access) or use a new domain.
-- **To confirm with the owner:** the correct phone and WhatsApp numbers, hours, happy-hour times, drink and cocktail prices, delivery zone and fees, and the payment gateway account (Azul merchant ID or PayPal).
-- **Brand:** the Marley-likeness logo is a legal risk. Recommend a stylised, non-likeness Rasta-calavera mark for the new site.
-- **Content:** real photo and video access (Instagram and TikTok originals), a licensed music bed, and a German voice source.
+- **Cloudflare account and API token** for the Worker, D1, KV, R2, the Durable Object and Workers AI; the GitHub Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. **Domain:** take over mezcalitobarandgrill.com from VAS (needs DNS access) or use a new domain.
+- **Cloudflare Access** application for `/admin` and `/api/admin`, and the owner's email in `OWNER_EMAILS`.
+- **Payments:** an Azul merchant account (then check the signature field order against Azul's guide and run a sandbox payment) and/or a PayPal business app.
+- **Messages:** a WhatsApp Business number on the Cloud API with the five templates listed in docs/development.md approved in four languages; a Resend account for email.
+- **To confirm with the owner** (also listed in `seed/data.ts` → `UNCONFIRMED`): the correct phone and WhatsApp numbers, hours, happy-hour times, the karaoke night, brunch hours, whether service applies to pickup and delivery, drink and cocktail prices, the delivery zone and fees, seating capacity, and the exact map pin.
+- **Brand:** the Marley-likeness logo is a legal risk. The site uses a type-only wordmark and an "M" mark; a stylised, non-likeness Rasta-calavera mark is still recommended.
+- **Content:** real photo and video access (Instagram and TikTok originals) for dishes and seasons; a licensed music bed for the Radio (the built-in riddim is original and free to use meanwhile); a German voice, if device speech is not good enough.
+- **Not yet exercised against the real services** (no credentials in development): the Workers AI calls (Selector, translations, voices), WhatsApp, Resend, Azul and PayPal. Each is behind a tested boundary and fails safe, but needs one live run once its account exists.
