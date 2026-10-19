@@ -25,7 +25,8 @@
   // Orders, bookings, party requests and The Selector: 30 posts a minute per visitor.
   "ratelimits": [{ "name": "PUBLIC_LIMIT", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }],
   "vars": {
-    "SITE_URL": "https://mezcalitobarandgrill.com",
+    // Empty: links use the address guests arrive on (workers.dev for now). Set it once a domain points here.
+    "SITE_URL": "",
     "TIMEZONE": "America/Santo_Domingo"
   }
 }

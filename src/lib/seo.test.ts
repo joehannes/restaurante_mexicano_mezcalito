@@ -63,7 +63,7 @@ describe('menuJsonLd', () => {
 describe('eventJsonLd', () => {
   it('turns a weekly night into dated events with Bávaro offsets', () => {
     const events = eventJsonLd(
-      { id: 'rum', title: { en: 'Rum & Reggae' }, body: { en: 'Reggae' }, days: [0], start: '18:00', end: '22:00', active: true, price: 35_000, cta: 'book', itemIds: [], flyer: { bg: 'jungle', ink: 'gold' } },
+      { id: 'rum', title: { en: 'Rum & Reggae' }, body: { en: 'Reggae' }, days: [0], start: '18:00', end: '22:00', active: true, price: 35_000, cta: 'book', itemIds: [], flyer: { bg: 'jungle', ink: 'gold' }, image: null },
       ['2026-10-25'],
       site,
       'https://mezcalitobarandgrill.com',
@@ -81,7 +81,7 @@ describe('eventJsonLd', () => {
   });
   it('ends an overnight night on the next day', () => {
     const [e] = eventJsonLd(
-      { id: 'late', title: { en: 'Late' }, body: undefined, days: [6], start: '22:00', end: '02:00', active: true, price: null, cta: 'none', itemIds: [], flyer: { bg: 'ink', ink: 'gold' } },
+      { id: 'late', title: { en: 'Late' }, body: undefined, days: [6], start: '22:00', end: '02:00', active: true, price: null, cta: 'none', itemIds: [], flyer: { bg: 'ink', ink: 'gold' }, image: null },
       ['2026-10-24'],
       site,
       'https://x.test',

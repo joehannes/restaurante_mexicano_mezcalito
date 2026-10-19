@@ -21,9 +21,11 @@ const { locale, site } = ctx;
 const menu = await loadMenu(env.DB);
 const signatures = menu.filter((i) => i.tags.includes('signature') && !i.hidden).slice(0, 6);
 
-const live = activeSpecials(ctx.now, ctx.specials, ctx.tz);
+// An offer that runs all day, every day is on the line-up, not news for tonight's strip.
+const news = (s: (typeof ctx.specials)[number]) => s.days.length > 0 || s.start > '08:00' || s.end !== '24:00';
+const live = activeSpecials(ctx.now, ctx.specials, ctx.tz).filter(news);
 const minutes = localNow(ctx.now, ctx.tz).minutes;
-const later = specialsOn(ctx.today, ctx.specials).filter((s) => !live.includes(s) && parseClock(s.start) > minutes);
+const later = specialsOn(ctx.today, ctx.specials).filter((s) => news(s) && !live.includes(s) && parseClock(s.start) > minutes);
 const lineup = ctx.specials.filter((s) => s.active);
 const maps = `https://www.google.com/maps/search/?api=1&query=${site.address.lat},${site.address.lng}`;
 ---
@@ -33,7 +35,7 @@ const maps = `https://www.google.com/maps/search/?api=1&query=${site.address.lat
   title={`Mezcalito Bar & Grill — ${t(locale, 'brand.tagline')} · Bávaro, Punta Cana`}
   description={`${t(locale, 'brand.tagline')} ${t(locale, 'brand.place')}. ${t(locale, 'home.howItWorks')}`}
 >
-  <JsonLd slot="head" data={restaurantJsonLd(site, Astro.site!.origin, locale)} />
+  <JsonLd slot="head" data={restaurantJsonLd(site, Astro.url.origin, locale)} />
   <Hero ctx={ctx} />
   <Reorder locale={locale} />
 
@@ -72,6 +74,34 @@ const maps = `https://www.google.com/maps/search/?api=1&query=${site.address.lat
         <div class="w-[78%] shrink-0 snap-center md:w-auto">
           <FlyerCard special={s} locale={locale} index={i} live={live.includes(s)} />
         </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-14" aria-labelledby="inside">
+    <h2 id="inside" class="font-display text-4xl uppercase md:text-5xl">{t(locale, 'home.inside')}</h2>
+    <p class="mt-2 max-w-2xl">{t(locale, 'home.insideSub')}</p>
+    <div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3">
+      {(
+        [
+          ['tacos-board', 'photo.tacos'],
+          ['story', 'photo.bar'],
+          ['facade', 'photo.facade'],
+        ] as const
+      ).map(([name, alt], i) => (
+        <a href={href(locale, '/story')} class:list={['overflow-hidden rounded-2xl border-4 border-ink shadow-[5px_5px_0_var(--c-ink)]', i === 0 && 'col-span-2 md:col-span-1']}>
+          <img
+            src={`/img/place/${name}-640.webp`}
+            srcset={`/img/place/${name}-640.webp 640w, /img/place/${name}.webp 1280w`}
+            sizes="(min-width: 768px) 33vw, 50vw"
+            alt={t(locale, alt)}
+            width="640"
+            height="427"
+            loading="lazy"
+            decoding="async"
+            class="aspect-[3/2] w-full object-cover transition-transform duration-500 hover:scale-105"
+          />
+        </a>
       ))}
     </div>
   </section>

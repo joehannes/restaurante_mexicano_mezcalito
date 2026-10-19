@@ -42,11 +42,15 @@ describe('parseSpecial', () => {
   it('accepts a night and fills in defaults', () => {
     expect(parseSpecial(taco)).toEqual({
       ok: true,
-      value: { ...taco, body: null, validFrom: null, validTo: null, itemIds: [], active: true },
+      value: { ...taco, body: null, validFrom: null, validTo: null, itemIds: [], image: null, active: true },
     });
   });
   it('accepts every seeded night', () => {
     for (const s of specials) expect(parseSpecial(s).ok, s.id).toBe(true);
+  });
+  it('takes a photo from the uploads or the site’s own, nothing else', () => {
+    expect(parseSpecial({ ...taco, image: '/img/nights/taco-tuesday.webp' })).toMatchObject({ ok: true, value: { image: '/img/nights/taco-tuesday.webp' } });
+    expect(parseSpecial({ ...taco, image: 'https://evil.example/x.jpg' })).toEqual({ ok: false, errors: ['image'] });
   });
   it('rejects unreadable flyers, bad times and inverted date ranges', () => {
     const r = parseSpecial({ ...taco, start: '24:00', flyer: { bg: 'gold', ink: 'gold' }, validFrom: '2026-12-01', validTo: '2026-11-01' });

@@ -6,10 +6,12 @@
 import { defineMiddleware } from 'astro:middleware';
 import { env } from 'cloudflare:workers';
 import { staffFor } from './server/access';
+import { rememberOrigin } from './server/origin';
 
 const ADMIN = /^\/(api\/)?admin(\/|$)/;
 
 export const onRequest = defineMiddleware(async ({ request, url, locals, clientAddress }, next) => {
+  rememberOrigin(env, url.origin);
   // Guests' posts (orders, bookings, parties, The Selector) are rate limited per visitor.
   if (request.method === 'POST' && url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/admin/') && env.PUBLIC_LIMIT) {
     const { success } = await env.PUBLIC_LIMIT.limit({ key: clientAddress ?? 'unknown' });

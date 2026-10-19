@@ -1,7 +1,8 @@
 ---
 /**
- * Our story: the One Love mission in Mezcalito's own words, and the two
- * ideas the whole site is built on — jamaica the flower, and the sound system.
+ * Our story: the One Love mission in Mezcalito's own words, their own photos
+ * and promo video, and the two ideas the whole site is built on — jamaica the
+ * flower, and the sound system.
  */
 import Site from '../../layouts/Site.astro';
 import { t } from '../../i18n/ui';
@@ -13,10 +14,14 @@ const { locale } = ctx;
 ---
 <Site ctx={ctx} path="/story" title={`${t(locale, 'story.title')} — Mezcalito Bar & Grill`} description={t(locale, 'story.p1')}>
   <section class="relative overflow-hidden bg-ink text-cream">
+    <img src="/img/place/story.webp" alt="" width="1280" height="396" class="absolute inset-0 size-full object-cover opacity-45" />
     <div class="split absolute inset-0" aria-hidden="true"></div>
-    <div class="relative mx-auto max-w-4xl px-4 py-16 md:py-24">
-      <p class="font-display text-gold uppercase">{t(locale, 'brand.slogan')}</p>
-      <h1 class="mt-2 font-display text-5xl leading-[0.95] uppercase md:text-7xl">{t(locale, 'story.lead')}</h1>
+    <div class="relative mx-auto flex max-w-4xl items-center gap-6 px-4 py-16 md:py-24">
+      <div class="flex-1">
+        <p class="font-display text-gold uppercase">{t(locale, 'brand.slogan')}</p>
+        <h1 class="mt-2 font-display text-5xl leading-[0.95] uppercase md:text-7xl">{t(locale, 'story.lead')}</h1>
+      </div>
+      <img src="/img/logo-320.webp" alt="Mezcalito Bar & Grill" width="200" height="232" class="hidden h-auto w-44 shrink-0 md:block" />
     </div>
   </section>
 
@@ -25,6 +30,22 @@ const { locale } = ctx;
     <p>{t(locale, 'story.p2')}</p>
     <p>{t(locale, 'story.p3')}</p>
   </article>
+
+  <section class="mx-auto mt-14 max-w-4xl px-4" aria-labelledby="watch">
+    <h2 id="watch" class="font-display text-3xl uppercase">{t(locale, 'story.watch')}</h2>
+    <!-- Mezcalito's own promo, re-encoded small; nothing downloads until it is played. -->
+    <video
+      class="mt-4 aspect-[854/456] w-full rounded-2xl border-4 border-ink bg-ink shadow-[6px_6px_0_var(--c-ink)]"
+      src="/video/mezcalito.mp4"
+      poster="/video/mezcalito-poster.webp"
+      preload="none"
+      controls
+      playsinline
+      muted
+      width="854"
+      height="456"
+    ></video>
+  </section>
 
   <section class="mx-auto mt-14 grid max-w-5xl gap-6 px-4 md:grid-cols-2">
     <div class="halftone rounded-2xl bg-hibiscus p-6 text-cream shadow-[6px_6px_0_var(--c-ink)]">
@@ -47,6 +68,6 @@ const { locale } = ctx;
   /* The logo's split: the Jamaican half and the Mexican half, on a diagonal. */
   .split {
     background: linear-gradient(115deg, var(--c-jungle) 0 38%, var(--c-gold) 38% 42%, var(--c-ink) 42% 58%, var(--c-sunset) 58% 62%, var(--c-hibiscus) 62%);
-    opacity: 0.35;
+    opacity: 0.3;
   }
 </style>

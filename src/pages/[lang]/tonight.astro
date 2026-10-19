@@ -30,7 +30,7 @@ const week = Array.from({ length: 6 }, (_, i) => addDays(today, i + 1)).map((dat
   specials: specialsOn(date, ctx.specials).filter((s) => s.days.length),
 }));
 
-const origin = Astro.site!.origin;
+const origin = Astro.url.origin;
 const events = ctx.specials.filter((s) => s.active).flatMap((s) => eventJsonLd(s, occurrences(s, today, 7), site, origin, locale));
 let index = 0;
 ---

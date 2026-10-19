@@ -8,12 +8,15 @@ import type { SeasonBlock } from './seasonPresets';
 import { normalizePhone } from './orderInput';
 import type { Closure, DeliveryZone, Localized, PricingSettings, TimeRange, WeeklyHours } from './types';
 import { LOCALES } from './types';
+import { parseWhatsAppSettings } from './whatsappTemplates';
 
 export type Parsed<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
 const CLOCK = /^(([01]\d|2[0-3]):[0-5]\d|24:00)$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]{1,39}$/;
+/** A staff upload in R2 (/media/…) or one of the site's own photos (/img/…). */
+const MEDIA = /^\/(media|img)\/[\w./-]{1,120}$/;
 /** Palette names a flyer may use; they map to the --c-* custom properties. */
 export const PALETTE = ['ink', 'cream', 'gold', 'hibiscus', 'jungle', 'sunset', 'lagoon', 'mezcal'] as const;
 
@@ -94,7 +97,7 @@ export function parseItemPatch(body: unknown): Parsed<ItemPatch> {
   }
   if (has('photo')) {
     if (b.photo === null || b.photo === '') out.photo = null;
-    else typeof b.photo === 'string' && /^\/media\/[\w./-]{1,120}$/.test(b.photo) ? (out.photo = b.photo) : errors.push('photo');
+    else typeof b.photo === 'string' && MEDIA.test(b.photo) ? (out.photo = b.photo) : errors.push('photo');
   }
   if (has('soldOut')) typeof b.soldOut === 'boolean' ? (out.soldOut = b.soldOut) : errors.push('soldOut');
   if (has('hidden')) typeof b.hidden === 'boolean' ? (out.hidden = b.hidden) : errors.push('hidden');
@@ -116,6 +119,7 @@ export interface SpecialInput {
   cta: 'order' | 'book' | 'none';
   itemIds: string[];
   flyer: { bg: string; ink: string; sticker?: string };
+  image: string | null;
   active: boolean;
 }
 
@@ -145,6 +149,7 @@ export function parseSpecial(body: unknown): Parsed<SpecialInput> {
   const ink = PALETTE.includes(f.ink as never) ? (f.ink as string) : undefined;
   if (!bg || !ink || bg === ink) errors.push('flyer');
   const sticker = text(f.sticker, 12);
+  const image = b.image === null || b.image === undefined || b.image === '' ? null : typeof b.image === 'string' && MEDIA.test(b.image) ? b.image : (errors.push('image'), null);
   if (errors.length) return { ok: false, errors };
   return {
     ok: true,
@@ -161,6 +166,7 @@ export function parseSpecial(body: unknown): Parsed<SpecialInput> {
       cta,
       itemIds,
       flyer: { bg: bg!, ink: ink!, ...(sticker ? { sticker } : {}) },
+      image,
       active: b.active !== false,
     },
   };
@@ -181,8 +187,6 @@ export interface SeasonInput {
   playlistUrl: string | null;
   ogImage: string | null;
 }
-
-const MEDIA = /^\/media\/[\w./-]{1,120}$/;
 
 function parseBlock(v: unknown): SeasonBlock | undefined {
   if (!isObject(v)) return undefined;
@@ -390,6 +394,7 @@ const SETTINGS = {
   deliveryZones: parseZones,
   reservations: parseRules,
   radio: parseRadio,
+  whatsapp: parseWhatsAppSettings,
 } satisfies Record<string, (v: unknown) => unknown>;
 
 export type SettingKey = keyof typeof SETTINGS;

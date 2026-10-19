@@ -4,3 +4,9 @@
   Cache-Control: no-cache
 /manifest.webmanifest
   Cache-Control: public, max-age=3600
+# Mezcalito's own photos, logo and promo video. They keep their names when
+# replaced, so they are cached for a week rather than forever.
+/img/*
+  Cache-Control: public, max-age=604800
+/video/*
+  Cache-Control: public, max-age=604800

@@ -39,18 +39,19 @@ CI runs all three on every pull request and push to `main`.
 
 | Path | What |
 |---|---|
-| `src/domain/` | Pure, tested core, no I/O: `pricing`, `schedule` (Bávaro clock, open now, nights, seasons), `capacity` (bookings), `orderStatus`, `roles`, `selector` (scoring, plates, AI-answer checks), `radioTree`, `seasonPresets`, and the input validators (`orderInput`, `reservationInput`, `partyInput`, `adminInput`). |
-| `src/server/` | D1 loaders and writes, `KitchenRoom` (Durable Object), `access` + `jwt` (staff sign-in), `payments/` (Azul, PayPal), `notify` (WhatsApp, email), `selector` (Workers AI), `radio` (voices), `insights`, `staffData`. |
+| `src/domain/` | Pure, tested core, no I/O: `pricing`, `schedule` (Bávaro clock, open now, nights, seasons), `capacity` (bookings), `orderStatus`, `roles`, `selector` (scoring, plates, AI-answer checks), `radioTree`, `seasonPresets`, `whatsappTemplates`, and the input validators (`orderInput`, `reservationInput`, `partyInput`, `adminInput`). |
+| `src/server/` | D1 loaders and writes, `KitchenRoom` (Durable Object), `access` + `jwt` (staff sign-in), `payments/` (Azul, PayPal), `notify` (WhatsApp, email), `selector` (Workers AI), `radio` (voices), `media` (R2 writes inside the free tier), `origin` (the site's address), `insights`, `staffData`. |
 | `src/pages/[lang]/` | Guest pages in `en`, `es`, `fr`, `de`: home, menu, checkout, `o/<code>`, reserve, tonight, selector, radio, `season/<slug>`, parties, story, find-us. `/` negotiates the language. |
-| `src/pages/admin/` | Staff pages: orders board, menu, nights, bookings, seasons, radio, insights, settings, table QR codes, staff. |
+| `src/pages/admin/` | Staff pages: orders board, menu, nights, bookings, seasons, radio, insights, settings, table QR codes, WhatsApp templates, staff. |
 | `src/pages/api/` | Guest endpoints (order, reserve, parties, selector, radio, table, pay) and `api/admin/*`. |
 | `src/islands/` | React islands; `islands/admin/` for the staff screens. |
 | `src/i18n/` | `ui.ts` + `en/es/fr/de.ts` for guests; `admin.ts` (EN/ES) for staff. Menu, offer and season text lives in D1. |
 | `src/middleware.ts` | Staff sign-in for `/admin` and `/api/admin`, the admin write header, the public rate limit. |
 | `src/worker.ts` | Worker entry: WebSockets, the edge cache for public pages, visit counting, the Durable Object export, the cron. |
 | `migrations/` | D1 schema. |
-| `seed/data.ts` | Launch content from Mezcalito's own menu. `UNCONFIRMED` lists what the owner must check. |
+| `seed/data.ts` | Launch content from Mezcalito's own site, menu and deals page. `DECIDED` notes which source won where they disagreed; `UNKNOWN` is what none of them says. |
 | `public/sw.js` | Service worker: pages network-first with an offline copy, the menu saved for offline reading. |
+| `public/img`, `public/video` | Mezcalito's own logo, photos and promo video from their website, sized for the web; icons and the share image are made from the logo. |
 
 ## Money and time
 
@@ -112,8 +113,12 @@ minutes unpaid. The guest can retry or switch to paying in person.
 ### WhatsApp templates
 
 Business messages outside a conversation the guest started need templates
-approved in Meta Business Manager, each in `en`, `es`, `fr` and `de`, with
-these names and body parameters:
+approved in Meta Business Manager, each in `en`, `es`, `fr` and `de`. Their
+full texts live in `src/domain/whatsappTemplates.ts`, and **Admin →
+WhatsApp** shows them ready to copy, with the steps, links and the email
+to register with. Staff tick each language there as Meta approves it; only
+ticked languages are sent (a guest whose language is not approved gets
+English, then Spanish). Names and body parameters:
 
 | Template | Parameters |
 |---|---|
@@ -146,9 +151,14 @@ D1 `mezcalito` (all migrations applied and seeded on 19 Oct 2026), KV
 `mezcalito-cache` and R2 `mezcalito-media`. **Never run `seed/seed.sql`
 against it again**: it replaces the content tables staff now edit.
 
-To go live, set the secrets above with `wrangler secret put`, then point
-the domain at the Worker. The old site's `.html` pages redirect to their
-new homes.
+The site runs on its workers.dev address. Links in messages, the sitemap
+and search data use whatever address it is served on (remembered in KV for
+the reminder cron); set `SITE_URL` in `wrangler.jsonc` once a domain points
+here. The old site's `.html` pages redirect to their new homes.
+
+Secrets (the table above) are set with `wrangler secret put`, or in the
+Cloudflare dashboard under Workers → mezcalito → Settings → Variables and
+secrets, once the first deploy has created the Worker.
 
 ### Staying on the free plan
 

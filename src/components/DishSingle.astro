@@ -2,12 +2,13 @@
 /**
  * A signature dish as a 7-inch single: a printed sleeve with the record
  * peeking out. Jamaican-leaning dishes get the green-and-gold label, Mexican
- * ones the rosa-and-marigold, true fusion the lagoon.
+ * ones the rosa-and-marigold, true fusion the lagoon. A dish with a photo has
+ * it printed on the sleeve, under the sleeve's colour.
  */
 import type { Locale, MenuItem } from '../domain/types';
 import { localized } from '../domain/types';
 import { formatPrice } from '../lib/format';
-import { fromPrice, fusionLabel } from '../lib/menuView';
+import { fromPrice, fusionLabel, photoThumb } from '../lib/menuView';
 import { dictionary, t } from '../i18n/ui';
 import { href } from '../server/page';
 
@@ -27,10 +28,16 @@ const price = fromPrice(item);
       <div class="absolute inset-[34%] rounded-full" style={`background:${label}`}></div>
       <div class="absolute inset-[48%] rounded-full bg-cream"></div>
     </div>
-    <div class="halftone absolute inset-0 flex flex-col justify-between rounded-xl p-4 text-cream shadow-[5px_5px_0_var(--c-ink)]" style={`background-color:${sleeve}`}>
-      <p class="text-xs font-bold tracking-[0.2em] uppercase opacity-90">{side} · {fusionLabel(item.fusion, dictionary(locale))}</p>
-      <p class="font-display text-3xl leading-[0.9] uppercase">{localized(item.name, locale)}</p>
-      <p class="flex items-center justify-between text-sm font-bold">
+    <div class="halftone absolute inset-0 flex flex-col justify-between overflow-hidden rounded-xl p-4 text-cream shadow-[5px_5px_0_var(--c-ink)]" style={`background-color:${sleeve}`}>
+      {item.photo && (
+        <>
+          <img src={photoThumb(item.photo)} alt="" width="320" height="320" loading="lazy" decoding="async" class="absolute inset-0 size-full object-cover" />
+          <div class="absolute inset-0" style={`background:linear-gradient(180deg, ${sleeve} 0%, transparent 38%, transparent 55%, ${sleeve} 100%)`}></div>
+        </>
+      )}
+      <p class="relative text-xs font-bold tracking-[0.2em] uppercase opacity-90">{side} · {fusionLabel(item.fusion, dictionary(locale))}</p>
+      <p class="relative font-display text-3xl leading-[0.9] uppercase">{localized(item.name, locale)}</p>
+      <p class="relative flex items-center justify-between text-sm font-bold">
         <span>{item.variants?.length ? `${t(locale, 'menu.from')} ` : ''}{formatPrice(price, locale)}</span>
         {item.heat >= 3 && <span aria-label={t(locale, 'menu.heatLevel', { n: item.heat })}>{'🌶'.repeat(Math.min(item.heat - 2, 3))}</span>}
       </p>

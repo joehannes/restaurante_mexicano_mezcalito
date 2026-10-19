@@ -21,6 +21,7 @@ export interface SpecialRecord extends Special {
   cta: 'order' | 'book' | 'none';
   itemIds: string[];
   flyer: { bg: string; ink: string; sticker?: string };
+  image: string | null;
 }
 
 export interface SeasonRecord extends Season {
@@ -59,6 +60,7 @@ export async function loadSite(db: D1Database) {
       cta: r.cta as SpecialRecord['cta'],
       itemIds: parse(r.item_ids as string),
       flyer: parse(r.flyer as string),
+      image: (r.image as string | null) ?? null,
     }),
   );
 

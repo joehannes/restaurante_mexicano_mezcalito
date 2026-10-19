@@ -22,8 +22,8 @@ interface Props {
   image?: string;
 }
 
-const { locale, title, description, path = '/', tokens = {}, image = '/og.png' } = Astro.props;
-const site = Astro.site!.origin;
+const { locale, title, description, path = '/', tokens = {}, image = '/og.jpg' } = Astro.props;
+const site = Astro.url.origin;
 const suffix = path === '/' ? '/' : path;
 // Only well-formed custom properties with plain colour values reach the page.
 const skin = Object.entries(tokens)
@@ -50,7 +50,7 @@ const skin = Object.entries(tokens)
     <meta name="theme-color" content="#141210" />
     <link rel="preload" href={anton} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={dmSans} as="font" type="font/woff2" crossorigin />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {skin && <style is:inline set:html={`:root{${skin}}`} />}

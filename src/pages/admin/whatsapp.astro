@@ -1,0 +1,28 @@
+---
+import { env } from 'cloudflare:workers';
+import Admin from '../../layouts/Admin.astro';
+import WhatsAppAdmin from '../../islands/admin/WhatsAppAdmin';
+import { parseWhatsAppSettings } from '../../domain/whatsappTemplates';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'settings');
+if (!page) return forbidden();
+const rows = await env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('contact', 'whatsapp')").all<{ key: string; value: string }>();
+const setting = (key: string) => {
+  const row = rows.results.find((r) => r.key === key);
+  return row ? JSON.parse(row.value) : undefined;
+};
+const contact = setting('contact') as { whatsapp: string; email: string };
+---
+<Admin title={page.dict['wa.title']} section="/admin/whatsapp">
+  <WhatsAppAdmin
+    client:load
+    dict={page.dict}
+    locale={page.locale}
+    number={contact.whatsapp}
+    email={contact.email}
+    siteUrl={env.SITE_URL || Astro.url.origin}
+    configured={!!(env.WHATSAPP_TOKEN && env.WHATSAPP_PHONE_ID)}
+    initial={parseWhatsAppSettings(setting('whatsapp')) ?? { approved: {} }}
+  />
+</Admin>

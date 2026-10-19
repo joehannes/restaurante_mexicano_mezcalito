@@ -40,6 +40,8 @@ export function restaurantJsonLd(site: SiteSettings, origin: string, locale: Loc
     alternateName: 'Mezcalito RD',
     description: 'Jamaican–Mexican fusion bar and grill in Bávaro, Punta Cana, one block from the beach.',
     url: `${origin}/${locale}/`,
+    logo: `${origin}/img/logo.png`,
+    image: [`${origin}/og.jpg`, `${origin}/img/place/facade.webp`],
     telephone: site.contact.phone,
     email: site.contact.email,
     servesCuisine: ['Jamaican', 'Mexican', 'Caribbean', 'Fusion'],

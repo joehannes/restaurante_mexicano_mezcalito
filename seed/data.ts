@@ -4,8 +4,8 @@
  *
  * Prices are copied exactly. Heat, fusion and tags are editorial first
  * guesses for the filters and The Selector; staff can change them in the
- * admin. Everything listed under `UNCONFIRMED` must be checked with the owner
- * before launch — their own pages contradict each other on these points.
+ * admin. Where their pages disagreed, `DECIDED` records which source won;
+ * `UNKNOWN` is what none of their pages says. Both are edited in the admin.
  */
 import type { ClockTime, Localized, TimeRange } from '../src/domain/types';
 import type { ReservationRules } from '../src/domain/capacity';
@@ -17,15 +17,19 @@ const L = (en: string, es: string, fr: string, de: string): Localized => ({ en, 
 const same = (name: string): Localized => ({ en: name });
 const rd = (pesos: number) => pesos * 100;
 
-export const UNCONFIRMED = [
-  'Main phone: the site says 809-959-3794, Google and Facebook say 809-959-1646, Uber Eats says 809-493-2864.',
-  'Happy hour: reviews say 5–9 pm, the old footer said 2–11 pm.',
-  'Karaoke night: Wednesday (old footer) or Sunday (deals page).',
-  'Brunch & Bubbly hours (old footer: 11 am–3 pm).',
-  'Whether the 10% service charge applies to pickup and delivery as well as dine-in.',
-  'Cocktail, MEGA drink, rum punch and hookah prices (not listed anywhere).',
-  'Delivery zone and fees; seating capacity and reservation windows.',
-  'Exact map pin (the old site embeds 18.69218, −68.42596).',
+export const DECIDED = [
+  'Main phone 809-959-1646, as on their Facebook page and Google listing (the old site footer says 809-959-3794).',
+  'WhatsApp 809-212-0782 and info@mezcalitobarandgrill.com, from their site.',
+  'Happy hour daily 5–9 pm, Karaoke Sunday 6–10 pm, Brunch & Bubbly Sunday 11 am–3 pm, Wings Day on Wednesday: their deals page.',
+  'Open every day 8 am–midnight: Uber Eats, Restaurant Guru and their TikTok.',
+  'The 10% service charge applies to every order, as their menu says prices exclude 18% ITBIS and 10% service.',
+  'Delivery is through Uber Eats only, as on their site; there are no in-house delivery zones.',
+  'Map pin 18.69218, −68.42596: the Google Maps embed on their site.',
+];
+
+export const UNKNOWN = [
+  'Cocktail, MEGA drink, rum punch and hookah prices: not listed on any of their pages, so not on the menu yet.',
+  'Seating capacity (40 assumed) and booking windows (12–10 pm assumed).',
 ];
 
 export interface SeedCategory {
@@ -54,6 +58,17 @@ export interface SeedItem {
   fusion?: number;
   tags?: string[];
 }
+
+/**
+ * Photos from Mezcalito's own website, served from public/img. Staff replace
+ * or add more from the admin (uploads go to R2 under /media).
+ */
+export const photos: Record<string, string> = Object.fromEntries(
+  [
+    'nachos', 'wings', 'shrimp-ceviche', 'rasta-pasta', 'jerk', 'braised-oxtail', 'quesabirria', 'oxtail-taco', 'beef-taco',
+    'classic-burger', 'bacon-bbq-burger', 'droodie-cookies', 'side-tostones', 'drink-passionfruit',
+  ].map((id) => [id, `/img/menu/${id}.webp`]),
+);
 
 export const categories: SeedCategory[] = [
   { id: 'appetizers', name: L('Appetizers', 'Entradas', 'Entrées', 'Vorspeisen') },
@@ -612,6 +627,8 @@ export interface SeedSpecial {
   cta: 'order' | 'book' | 'none';
   itemIds?: string[];
   flyer: { bg: string; ink: string; sticker?: string };
+  /** The photo from Mezcalito's own deals page. */
+  image?: string;
 }
 
 export const specials: SeedSpecial[] = [
@@ -620,6 +637,7 @@ export const specials: SeedSpecial[] = [
     title: L('Happy hour', 'Happy hour', 'Happy hour', 'Happy Hour'),
     body: L('Half-off margaritas and martinis, every day.', 'Margaritas y martinis a mitad de precio, todos los días.', 'Margaritas et martinis à moitié prix, tous les jours.', 'Margaritas und Martinis zum halben Preis, jeden Tag.'),
     flyer: { bg: 'sunset', ink: 'ink', sticker: '½' },
+    image: '/img/nights/happy-hour.webp',
   },
   {
     id: 'taco-tuesday', days: [2], start: '08:00', end: '24:00', price: rd(199), cta: 'order',
@@ -627,36 +645,49 @@ export const specials: SeedSpecial[] = [
     title: L('Taco Tuesday', 'Martes de tacos', 'Mardi tacos', 'Taco-Dienstag'),
     body: L('Shrimp, beef, chicken or oxtail tacos, all day.', 'Tacos de camarón, res, pollo o rabo, todo el día.', 'Tacos crevettes, bœuf, poulet ou queue de bœuf, toute la journée.', 'Tacos mit Garnelen, Rind, Hähnchen oder Ochsenschwanz, den ganzen Tag.'),
     flyer: { bg: 'hibiscus', ink: 'cream', sticker: 'RD$199' },
+    image: '/img/nights/taco-tuesday.webp',
   },
   {
     id: 'wingsday', days: [3], start: '08:00', end: '24:00', price: rd(899), cta: 'order', itemIds: ['wings'],
     title: L('Wingsday Wednesday', 'Miércoles de alitas', 'Mercredi ailes', 'Wings-Mittwoch'),
-    body: L('The wings deal, all Wednesday.', 'La oferta de alitas, todo el miércoles.', 'L’offre ailes de poulet, tout le mercredi.', 'Das Wings-Angebot, den ganzen Mittwoch.'),
+    body: L('12 chicken wings, 2 Presidente beers and fries.', '12 alitas de pollo, 2 cervezas Presidente y papas fritas.', '12 ailes de poulet, 2 bières Presidente et des frites.', '12 Chicken Wings, 2 Presidente-Bier und Pommes.'),
     flyer: { bg: 'gold', ink: 'ink' },
+    image: '/img/nights/wingsday.webp',
   },
   {
     id: 'ladies-night', days: [4], start: '18:00', end: '24:00', price: rd(999), cta: 'book', itemIds: ['rasta-pasta'],
     title: L('Ladies Night', 'Noche de chicas', 'Soirée filles', 'Ladies Night'),
     body: L('Rasta Pasta and a glass of wine.', 'Rasta Pasta y una copa de vino.', 'Rasta Pasta et un verre de vin.', 'Rasta Pasta und ein Glas Wein.'),
     flyer: { bg: 'mezcal', ink: 'cream', sticker: '♀' },
+    image: '/img/nights/ladies-night.webp',
   },
   {
     id: 'unlimited-hookah', days: [6], start: '18:00', end: '24:00', price: rd(2999), cta: 'book',
     title: L('Unlimited hookah', 'Hookah ilimitado', 'Chicha à volonté', 'Unbegrenzt Shisha'),
     body: L('Every flavour, all night Saturday.', 'Todos los sabores, toda la noche del sábado.', 'Tous les parfums, tout le samedi soir.', 'Alle Sorten, die ganze Samstagnacht.'),
     flyer: { bg: 'ink', ink: 'lagoon' },
+    image: '/img/nights/unlimited-hookah.webp',
   },
   {
     id: 'brunch-bubbly', days: [0], start: '11:00', end: '15:00', price: rd(699), cta: 'book',
     title: L('Brunch & Bubbly', 'Brunch & burbujas', 'Brunch & bulles', 'Brunch & Bubbles'),
     body: L('Sunday brunch with bottomless mimosas.', 'Brunch del domingo con mimosas ilimitadas.', 'Brunch du dimanche avec mimosas à volonté.', 'Sonntagsbrunch mit unbegrenzt Mimosas.'),
     flyer: { bg: 'lagoon', ink: 'ink' },
+    image: '/img/nights/brunch-bubbly.webp',
   },
   {
     id: 'rum-reggae', days: [0], start: '18:00', end: '22:00', price: rd(350), cta: 'book',
-    title: L('Rum & Reggae Sunday', 'Domingo de ron y reggae', 'Dimanche rhum & reggae', 'Rum & Reggae Sonntag'),
-    body: L('Reggae on the sound system, karaoke and half-off rum punch.', 'Reggae en el sound system, karaoke y rum punch a mitad de precio.', 'Reggae sur le sound system, karaoké et punch au rhum à moitié prix.', 'Reggae vom Soundsystem, Karaoke und Rum Punch zum halben Preis.'),
+    title: L('Karaoke Sunday', 'Domingo de karaoke', 'Dimanche karaoké', 'Karaoke-Sonntag'),
+    body: L('Karaoke, reggae on the sound system and half-off rum punch.', 'Karaoke, reggae en el sound system y rum punch a mitad de precio.', 'Karaoké, reggae sur le sound system et punch au rhum à moitié prix.', 'Karaoke, Reggae vom Soundsystem und Rum Punch zum halben Preis.'),
     flyer: { bg: 'jungle', ink: 'gold', sticker: 'One Love' },
+    image: '/img/nights/rum-reggae.webp',
+  },
+  {
+    id: 'flight', days: [], start: '08:00', end: '24:00', price: rd(779), cta: 'none',
+    title: L('The flight', 'El flight', 'Le flight', 'Der Flight'),
+    body: L('A tasting flight from the bar, any day.', 'Una degustación del bar, cualquier día.', 'Une dégustation du bar, tous les jours.', 'Ein Tasting-Flight von der Bar, jeden Tag.'),
+    flyer: { bg: 'cream', ink: 'mezcal' },
+    image: '/img/nights/flight.webp',
   },
 ];
 
@@ -680,7 +711,7 @@ export const settings = {
     phone: '+18099591646',
     whatsapp: '+18092120782',
     email: 'info@mezcalitobarandgrill.com',
-    confirmed: false,
+    confirmed: true,
   },
   address: {
     street: 'Calle Pedro Mir',
@@ -721,6 +752,8 @@ export const settings = {
   } satisfies ReservationRules,
   // No licensed music bed yet: the Radio plays its own synthesized riddim.
   radio: { bed: null as string | null },
+  // Ticked in Admin → WhatsApp as Meta approves each template.
+  whatsapp: { approved: {} },
 };
 
 // ── Mezcalito Radio ─────────────────────────────────────────────────────────

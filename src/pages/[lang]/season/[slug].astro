@@ -28,7 +28,7 @@ const dates = new Intl.DateTimeFormat({ en: 'en-US', es: 'es-DO', fr: 'fr-FR', d
 const fmt = (d: string) => dates.format(new Date(`${d}T12:00:00Z`));
 const state = today < season.startsOn ? 'upcoming' : today > season.endsOn ? 'ended' : 'live';
 const name = localized(season.name, locale);
-const origin = Astro.site!.origin;
+const origin = Astro.url.origin;
 const event = {
   '@context': 'https://schema.org',
   '@type': 'Event',

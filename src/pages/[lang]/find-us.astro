@@ -30,11 +30,20 @@ const todayWeekday = new Date(`${today}T12:00:00Z`).getUTCDay();
 const closures = site.closures.filter((c) => c.date >= today && c.date <= addDays(today, 60));
 ---
 <Site ctx={ctx} path="/find-us" title={`${t(locale, 'find.title')} — Mezcalito, Calle Pedro Mir, Bávaro`} description={t(locale, 'find.intro')}>
-  <JsonLd slot="head" data={restaurantJsonLd(site, Astro.site!.origin, locale)} />
+  <JsonLd slot="head" data={restaurantJsonLd(site, Astro.url.origin, locale)} />
   <div class="mx-auto max-w-6xl px-4 pt-8">
     <h1 class="font-display text-5xl uppercase md:text-6xl">{t(locale, 'find.title')}</h1>
     <p class="mt-2 max-w-2xl text-lg">{t(locale, 'find.intro')}</p>
     <OpenStatus ctx={ctx} class="mt-4 bg-ink text-cream" />
+    <img
+      src="/img/place/facade.webp"
+      alt={t(locale, 'photo.facade')}
+      width="680"
+      height="510"
+      loading="lazy"
+      decoding="async"
+      class="mt-6 aspect-[2/1] w-full rounded-2xl border-4 border-ink object-cover shadow-[6px_6px_0_var(--c-ink)] md:aspect-[3/1]"
+    />
   </div>
 
   <div class="mx-auto mt-8 grid max-w-6xl gap-8 px-4 md:grid-cols-[3fr_2fr]">

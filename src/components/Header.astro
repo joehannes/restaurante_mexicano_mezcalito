@@ -1,7 +1,7 @@
 ---
 /**
- * The fascia: black band, painted wordmark — the same as the sign over
- * Mezcalito's terrace on Calle Pedro Mir. Solid colour, no backdrop blur, so
+ * The fascia: black band, Mezcalito's own emblem and the painted name — the
+ * same as the sign over the terrace on Calle Pedro Mir. Solid colour, no backdrop blur, so
  * a sticky header costs nothing while scrolling.
  */
 import type { Locale } from '../domain/types';
@@ -23,7 +23,8 @@ const nav = [
 ---
 <header class="sticky top-0 z-40 bg-ink text-cream">
   <div class="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-    <a href={href(locale)} class="font-display text-2xl tracking-[0.12em] text-gold uppercase" aria-label="Mezcalito — home">
+    <a href={href(locale)} class="flex items-center gap-2 font-display text-2xl tracking-[0.12em] text-gold uppercase" aria-label="Mezcalito — home">
+      <img src="/img/mark-96.webp" alt="" width="46" height="48" class="h-12 w-auto" />
       Mezcalito
     </a>
     <nav class="ml-6 hidden gap-5 text-sm font-semibold md:flex" aria-label="Main">

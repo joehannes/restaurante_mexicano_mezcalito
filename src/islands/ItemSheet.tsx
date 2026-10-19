@@ -107,6 +107,7 @@ export default function ItemSheet({ item, locale, dict, pricing, onClose }: Prop
         </div>
 
         <div className="space-y-6 px-5 pb-32">
+          {item.photo && <img src={item.photo} alt="" width={960} height={540} decoding="async" className="aspect-video w-full rounded-2xl object-cover" />}
           {item.description && <p>{localized(item.description, locale)}</p>}
 
           {item.variants && (

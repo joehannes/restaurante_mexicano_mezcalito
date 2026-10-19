@@ -5,20 +5,23 @@
  * fails because a message did not go out. Callers run these in `waitUntil`.
  *
  * WhatsApp business messages outside a chat the guest started must use
- * templates approved in Meta Business Manager. The names and their numbered
- * parameters are listed in docs/development.md; each needs its EN, ES, FR and
- * DE versions.
+ * templates approved in Meta Business Manager. They are written out in
+ * domain/whatsappTemplates.ts, and Admin → WhatsApp shows them ready to copy;
+ * only the languages staff have ticked as approved are ever sent.
  */
 import { isLocale, longDate, t } from '../i18n/ui';
 import { formatClock, formatPrice } from '../lib/format';
 import { reservationIcs } from '../lib/ics';
 import type { Locale } from '../domain/types';
+import { siteUrl } from './origin';
+import { parseWhatsAppSettings, templateLanguage, type TemplateName } from '../domain/whatsappTemplates';
 
-type Template = 'mezcalito_order_received' | 'mezcalito_order_ready' | 'mezcalito_order_on_the_way' | 'mezcalito_reservation_confirmed' | 'mezcalito_reservation_reminder';
-
-export async function sendWhatsApp(env: Env, to: string, template: Template, locale: Locale, params: string[]): Promise<boolean> {
+export async function sendWhatsApp(env: Env, to: string, template: TemplateName, locale: Locale, params: string[]): Promise<boolean> {
   if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_ID) return false;
   try {
+    const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'whatsapp'").first<{ value: string }>();
+    const language = templateLanguage(row ? parseWhatsAppSettings(JSON.parse(row.value)) : undefined, template, locale);
+    if (!language) return false;
     const response = await fetch(`https://graph.facebook.com/v21.0/${env.WHATSAPP_PHONE_ID}/messages`, {
       method: 'POST',
       headers: { authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'content-type': 'application/json' },
@@ -28,7 +31,7 @@ export async function sendWhatsApp(env: Env, to: string, template: Template, loc
         type: 'template',
         template: {
           name: template,
-          language: { code: locale },
+          language: { code: language },
           components: [{ type: 'body', parameters: params.map((text) => ({ type: 'text', text })) }],
         },
       }),
@@ -90,7 +93,8 @@ export async function notifyOrderPlaced(env: Env, code: string) {
   const order = await loadOrderRow(env, code);
   if (!order) return;
   const locale = toLocale(order.locale);
-  const link = `${env.SITE_URL}/${locale}/o/${order.code}?k=${order.access_key}`;
+  const site = await siteUrl(env);
+  const link = `${site}/${locale}/o/${order.code}?k=${order.access_key}`;
   const first = order.customer_name.split(/\s+/)[0] ?? order.customer_name;
   const total = formatPrice(order.total, locale);
   await Promise.all([
@@ -103,7 +107,7 @@ export async function notifyOrderPlaced(env: Env, code: string) {
         env,
         staffEmails(env),
         `New order ${order.code} · ${order.mode === 'dine_in' ? `table ${order.table_label}` : order.mode} · ${formatPrice(order.total, 'en')}`,
-        `${order.customer_name} (${order.customer_phone})\n${env.SITE_URL}/admin`,
+        `${order.customer_name} (${order.customer_phone})\n${site}/admin`,
       ),
   ]);
 }
@@ -159,7 +163,7 @@ export async function notifyParty(env: Env, id: number) {
     env,
     staffEmails(env),
     `Party request: ${p.kind}, ${p.guests} guests, ${p.date}`,
-    `${p.name} (${p.phone}${p.email ? `, ${p.email}` : ''})\n${p.date}${p.time ? ` ${p.time}` : ''} · ${p.guests} guests · ${p.kind}\n\n${p.message ?? ''}\n\n${env.SITE_URL}/admin/bookings`,
+    `${p.name} (${p.phone}${p.email ? `, ${p.email}` : ''})\n${p.date}${p.time ? ` ${p.time}` : ''} · ${p.guests} guests · ${p.kind}\n\n${p.message ?? ''}\n\n${await siteUrl(env)}/admin/bookings`,
   );
 }
 

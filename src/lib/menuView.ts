@@ -6,6 +6,9 @@ import type { Dictionary } from '../i18n/fill';
 export const fromPrice = (item: MenuItem) =>
   item.variants?.length ? Math.min(...item.variants.filter((v) => !v.soldOut).map((v) => v.price), Infinity) : item.price;
 
+/** The small version of a dish photo for lists: the site's own photos ship a 320px copy, uploads are used as they are. */
+export const photoThumb = (src: string) => (src.startsWith('/img/') ? src.replace(/\.webp$/, '-320.webp') : src);
+
 export const hasChoices = (item: MenuItem) =>
   !!item.variants?.length || !!item.modifierGroups?.length || item.unit === 'lb';
 

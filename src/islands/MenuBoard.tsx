@@ -13,7 +13,7 @@ import { localized } from '../domain/types';
 import { fill, type Dictionary } from '../i18n/fill';
 import { addToCart } from '../lib/cart';
 import { formatPrice } from '../lib/format';
-import { FILTERS, fromPrice, fusionLabel, hasChoices, matches, type MenuFilter } from '../lib/menuView';
+import { FILTERS, fromPrice, fusionLabel, hasChoices, matches, photoThumb, type MenuFilter } from '../lib/menuView';
 import type { Category } from '../server/menu';
 import CartPill from './CartPill';
 import ItemSheet from './ItemSheet';
@@ -121,30 +121,35 @@ export default function MenuBoard({ locale, dict, categories, menu, pricing, che
                     type="button"
                     disabled={item.soldOut}
                     onClick={() => setOpen(item)}
-                    className="flex h-full w-full flex-col rounded-2xl border-2 border-ink/10 bg-white p-4 pr-16 text-left hover:border-ink disabled:opacity-50"
+                    className="flex h-full w-full gap-4 rounded-2xl border-2 border-ink/10 bg-white p-4 pr-16 text-left hover:border-ink disabled:opacity-50"
                   >
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-lg font-bold">{localized(item.name, locale)}</span>
-                      {item.tags.includes('signature') && (
-                        <span className="sticker bg-gold px-2 text-xs" style={{ ['--tilt' as string]: '-3deg' }}>
-                          {dict['menu.signature']}
-                        </span>
-                      )}
-                      {item.soldOut && <span className="sticker bg-sunset px-2 text-xs text-cream">{dict['menu.soldOut']}</span>}
-                    </span>
-                    {item.description && <span className="mt-1 line-clamp-2 text-sm text-ink/75">{localized(item.description, locale)}</span>}
-                    <span className="mt-auto flex items-center gap-3 pt-3 text-sm">
-                      <span className="font-bold">
-                        {item.variants?.length ? `${dict['menu.from']} ` : ''}
-                        {formatPrice(fromPrice(item), locale)}
-                        {item.unit === 'lb' && ` ${dict['menu.perLb']}`}
+                    {item.photo && (
+                      <img src={photoThumb(item.photo)} alt="" width={96} height={96} loading="lazy" decoding="async" className="size-24 shrink-0 rounded-xl object-cover" />
+                    )}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-lg font-bold">{localized(item.name, locale)}</span>
+                        {item.tags.includes('signature') && (
+                          <span className="sticker bg-gold px-2 text-xs" style={{ ['--tilt' as string]: '-3deg' }}>
+                            {dict['menu.signature']}
+                          </span>
+                        )}
+                        {item.soldOut && <span className="sticker bg-sunset px-2 text-xs text-cream">{dict['menu.soldOut']}</span>}
                       </span>
-                      <span className="text-ink/60">{fusionLabel(item.fusion, dict)}</span>
-                      {item.heat >= 3 && (
-                        <span className="font-bold text-sunset" aria-label={fill(dict, 'menu.heatLevel', { n: item.heat })}>
-                          {'●'.repeat(item.heat)}
+                      {item.description && <span className="mt-1 line-clamp-2 text-sm text-ink/75">{localized(item.description, locale)}</span>}
+                      <span className="mt-auto flex items-center gap-3 pt-3 text-sm">
+                        <span className="font-bold">
+                          {item.variants?.length ? `${dict['menu.from']} ` : ''}
+                          {formatPrice(fromPrice(item), locale)}
+                          {item.unit === 'lb' && ` ${dict['menu.perLb']}`}
                         </span>
-                      )}
+                        <span className="text-ink/60">{fusionLabel(item.fusion, dict)}</span>
+                        {item.heat >= 3 && (
+                          <span className="font-bold text-sunset" aria-label={fill(dict, 'menu.heatLevel', { n: item.heat })}>
+                            {'●'.repeat(item.heat)}
+                          </span>
+                        )}
+                      </span>
                     </span>
                   </button>
                   {!item.soldOut && (

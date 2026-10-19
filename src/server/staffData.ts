@@ -179,10 +179,10 @@ export async function adminMenu(db: D1Database) {
 export async function saveSpecial(db: D1Database, s: SpecialInput) {
   await db
     .prepare(
-      `INSERT INTO specials (id, title, body, days, start_time, end_time, valid_from, valid_to, price, cta, item_ids, flyer, active, position)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, (SELECT COALESCE(MAX(position), 0) + 1 FROM specials))
+      `INSERT INTO specials (id, title, body, days, start_time, end_time, valid_from, valid_to, price, cta, item_ids, flyer, active, image, position)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, (SELECT COALESCE(MAX(position), 0) + 1 FROM specials))
        ON CONFLICT (id) DO UPDATE SET title = ?2, body = ?3, days = ?4, start_time = ?5, end_time = ?6, valid_from = ?7, valid_to = ?8,
-         price = ?9, cta = ?10, item_ids = ?11, flyer = ?12, active = ?13, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`,
+         price = ?9, cta = ?10, item_ids = ?11, flyer = ?12, active = ?13, image = ?14, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`,
     )
     .bind(
       s.id,
@@ -198,6 +198,7 @@ export async function saveSpecial(db: D1Database, s: SpecialInput) {
       JSON.stringify(s.itemIds),
       JSON.stringify(s.flyer),
       Number(s.active),
+      s.image,
     )
     .run();
 }

@@ -10,7 +10,7 @@ import type { AdminDictionary, AdminLocale } from '../../i18n/admin';
 import { formatClock, formatPrice } from '../../lib/format';
 import type { SpecialRecord } from '../../server/content';
 import { api, toCentavos, toPesos } from './api';
-import { button, Field, ghost, input, LocalizedFields, Sheet, Toggle } from './ui';
+import { button, Field, ghost, input, LocalizedFields, PhotoField, Sheet, Toggle } from './ui';
 
 const slug = (text: string) =>
   text
@@ -137,6 +137,7 @@ function NightEditor({
   const [bg, setBg] = useState(special?.flyer.bg ?? 'hibiscus');
   const [ink, setInk] = useState(special?.flyer.ink ?? 'cream');
   const [sticker, setSticker] = useState(special?.flyer.sticker ?? '');
+  const [image, setImage] = useState<string | null>(special?.image ?? null);
   const [errors, setErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -157,6 +158,7 @@ function NightEditor({
         cta,
         itemIds: special?.itemIds ?? [],
         flyer: { bg, ink, ...(sticker.trim() ? { sticker: sticker.trim() } : {}) },
+        image,
         active: special?.active ?? true,
       },
     });
@@ -189,7 +191,8 @@ function NightEditor({
     <Sheet title={special ? localized(special.title, locale) : dict['nights.new']} onClose={onClose} dict={dict}>
       <div className="grid gap-4">
         {/* The flyer as guests will see it. */}
-        <div className="halftone rounded-2xl p-5 shadow-[6px_6px_0_var(--c-ink)]" style={{ backgroundColor: `var(--c-${bg})`, color: `var(--c-${ink})` }}>
+        <div className="halftone overflow-hidden rounded-2xl p-5 shadow-[6px_6px_0_var(--c-ink)]" style={{ backgroundColor: `var(--c-${bg})`, color: `var(--c-${ink})` }}>
+          {image && <img src={image} alt="" className="-mx-5 -mt-5 mb-4 aspect-[16/7] w-[calc(100%+2.5rem)] max-w-none object-cover" />}
           <p className="text-xs font-bold tracking-[0.18em] uppercase">{days.length ? days.map((d) => dayName(d, adminLocale)).join(' · ') : dict['nights.daily']}</p>
           <p className="font-display text-4xl leading-[0.9] uppercase">{title[locale] || title.en || '…'}</p>
           {(body[locale] || body.en) && <p className="mt-2 text-sm">{body[locale] || body.en}</p>}
@@ -255,6 +258,8 @@ function NightEditor({
           <Field label={dict['nights.sticker']}>
             <input value={sticker} onChange={(e) => setSticker(e.target.value)} maxLength={12} className={input} />
           </Field>
+          <span className={`text-xs font-bold uppercase ${bad('image')}`}>{dict['menu.photo']}</span>
+          <PhotoField value={image} onChange={setImage} dict={dict} folder="nights" />
         </fieldset>
 
         {!special && (

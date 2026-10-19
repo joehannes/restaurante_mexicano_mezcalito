@@ -2,7 +2,7 @@
  * seed/data.ts as table rows, in display order. Shared by the SQL generator
  * and the test that checks every seeded dish can actually be ordered.
  */
-import { categories, groups, items, radio, seasons, settings, specials } from './data.ts';
+import { categories, groups, items, photos, radio, seasons, settings, specials } from './data.ts';
 
 export function seedRows() {
   return {
@@ -21,6 +21,7 @@ export function seedRows() {
       heat: item.heat ?? 0,
       fusion: item.fusion ?? 0,
       tags: item.tags ?? [],
+      photo: photos[item.id] ?? null,
       position,
     })),
     item_variants: items.flatMap((item) =>
@@ -40,6 +41,7 @@ export function seedRows() {
       cta: s.cta,
       item_ids: s.itemIds ?? [],
       flyer: s.flyer,
+      image: s.image ?? null,
       position,
     })),
     seasons: seasons.map((s) => ({
