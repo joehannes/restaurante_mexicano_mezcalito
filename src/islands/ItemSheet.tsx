@@ -94,7 +94,7 @@ export default function ItemSheet({ item, locale, dict, pricing, onClose }: Prop
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-cream px-5 pt-5 pb-3">
           <div>
             <p className="text-xs font-bold tracking-[0.18em] text-hibiscus uppercase">
-              {fusionLabel(item.fusion, locale)}
+              {fusionLabel(item.fusion, dict)}
               {item.heat > 0 && ` · ${fill(dict, 'menu.heatLevel', { n: item.heat })}`}
             </p>
             <h2 id="sheet-title" className="font-display text-3xl leading-none uppercase">

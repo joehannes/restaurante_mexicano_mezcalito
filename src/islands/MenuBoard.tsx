@@ -139,7 +139,7 @@ export default function MenuBoard({ locale, dict, categories, menu, pricing, che
                         {formatPrice(fromPrice(item), locale)}
                         {item.unit === 'lb' && ` ${dict['menu.perLb']}`}
                       </span>
-                      <span className="text-ink/60">{fusionLabel(item.fusion, locale)}</span>
+                      <span className="text-ink/60">{fusionLabel(item.fusion, dict)}</span>
                       {item.heat >= 3 && (
                         <span className="font-bold text-sunset" aria-label={fill(dict, 'menu.heatLevel', { n: item.heat })}>
                           {'●'.repeat(item.heat)}

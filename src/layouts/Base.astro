@@ -4,6 +4,9 @@
  * injected as CSS variables before first paint.
  */
 import '../styles/global.css';
+// The poster face and the body face, preloaded so headlines do not re-wrap when they arrive.
+import anton from '@fontsource/anton/files/anton-latin-400-normal.woff2?url';
+import dmSans from '@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2?url';
 import type { Locale } from '../domain/types';
 import { LOCALES } from '../i18n/ui';
 
@@ -45,6 +48,8 @@ const skin = Object.entries(tokens)
     <meta property="og:url" content={`${site}/${locale}${suffix}`} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#141210" />
+    <link rel="preload" href={anton} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={dmSans} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

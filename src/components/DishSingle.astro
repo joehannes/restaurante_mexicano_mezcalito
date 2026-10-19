@@ -8,7 +8,7 @@ import type { Locale, MenuItem } from '../domain/types';
 import { localized } from '../domain/types';
 import { formatPrice } from '../lib/format';
 import { fromPrice, fusionLabel } from '../lib/menuView';
-import { t } from '../i18n/ui';
+import { dictionary, t } from '../i18n/ui';
 import { href } from '../server/page';
 
 interface Props {
@@ -28,7 +28,7 @@ const price = fromPrice(item);
       <div class="absolute inset-[48%] rounded-full bg-cream"></div>
     </div>
     <div class="halftone absolute inset-0 flex flex-col justify-between rounded-xl p-4 text-cream shadow-[5px_5px_0_var(--c-ink)]" style={`background-color:${sleeve}`}>
-      <p class="text-xs font-bold tracking-[0.2em] uppercase opacity-90">{side} · {fusionLabel(item.fusion, locale)}</p>
+      <p class="text-xs font-bold tracking-[0.2em] uppercase opacity-90">{side} · {fusionLabel(item.fusion, dictionary(locale))}</p>
       <p class="font-display text-3xl leading-[0.9] uppercase">{localized(item.name, locale)}</p>
       <p class="flex items-center justify-between text-sm font-bold">
         <span>{item.variants?.length ? `${t(locale, 'menu.from')} ` : ''}{formatPrice(price, locale)}</span>
