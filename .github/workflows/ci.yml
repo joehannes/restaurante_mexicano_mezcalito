@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # "Run workflow" on the Actions tab redeploys main without a code change.
+  workflow_dispatch:
 
 jobs:
   check:
@@ -22,7 +24,7 @@ jobs:
   deploy:
     # Runs only once the Cloudflare secrets exist, so forks and fresh clones
     # stay green.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: check
     runs-on: ubuntu-latest
     env:
