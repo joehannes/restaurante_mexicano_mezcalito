@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { guard, json } from '../../../server/admin';
+import { putMedia } from '../../../server/media';
 
 const TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -23,6 +24,6 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (file.size > MAX_BYTES) return json({ error: 'too_large' }, 413);
   const folder = String(form?.get('folder') ?? 'menu').replace(/[^a-z-]/g, '').slice(0, 20) || 'menu';
   const key = `${folder}/${crypto.randomUUID()}.${ext}`;
-  await env.MEDIA.put(key, file.stream(), { httpMetadata: { contentType: file.type, cacheControl: 'public, max-age=31536000, immutable' } });
+  if (!(await putMedia(env, key, file, file.size, file.type))) return json({ error: 'storage_full' }, 507);
   return json({ path: `/media/${key}` }, 201);
 };

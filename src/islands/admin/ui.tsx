@@ -101,6 +101,7 @@ export function LocalizedFields({
 /** A photo from R2: preview, replace, remove. */
 export function PhotoField({ value, onChange, dict, folder = 'menu' }: { value: string | null; onChange: (path: string | null) => void; dict: AdminDictionary; folder?: string }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
   const upload = async (file: File | undefined) => {
     if (!file) return;
     const form = new FormData();
@@ -109,10 +110,11 @@ export function PhotoField({ value, onChange, dict, folder = 'menu' }: { value: 
     setBusy(true);
     const result = await api<{ path: string }>('/upload', { form });
     setBusy(false);
+    setError(result.ok ? undefined : uploadError(result.error, dict));
     if (result.ok) onChange(result.data.path);
   };
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       {value ? <img src={value} alt="" className="size-20 rounded-lg object-cover" /> : <span className="size-20 rounded-lg bg-ink/10" />}
       <label className={`${ghost} cursor-pointer`}>
         {busy ? dict['common.saving'] : dict['common.upload']}
@@ -123,9 +125,17 @@ export function PhotoField({ value, onChange, dict, folder = 'menu' }: { value: 
           {dict['common.remove']}
         </button>
       )}
+      {error && (
+        <p role="alert" className="basis-full text-sm font-semibold text-hibiscus">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
+
+/** Why an upload to /api/admin/upload was refused, for staff. */
+export const uploadError = (error: string, dict: AdminDictionary) => dict[error === 'storage_full' ? 'common.storageFull' : 'common.uploadFailed'];
 
 /** A modal sheet for editing one thing. */
 export function Sheet({ title, onClose, children, dict }: { title: string; onClose: () => void; children: ReactNode; dict: AdminDictionary }) {

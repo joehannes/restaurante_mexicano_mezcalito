@@ -10,7 +10,7 @@ import type { Locale, Localized } from '../../domain/types';
 import { localized } from '../../domain/types';
 import { fillAdmin, type AdminDictionary, type AdminKey, type AdminLocale } from '../../i18n/admin';
 import { api, toCentavos, toPesos } from './api';
-import { button, field, ghost, input, LocalizedFields, Sheet } from './ui';
+import { button, field, ghost, input, LocalizedFields, Sheet, uploadError } from './ui';
 
 type Voices = Record<'en' | 'es' | 'fr' | 'de', 'current' | 'stale' | 'none'>;
 interface Data {
@@ -29,6 +29,7 @@ export default function RadioAdmin({ dict, locale }: { dict: AdminDictionary; lo
   const [problems, setProblems] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [rendering, setRendering] = useState<string>();
+  const [bedError, setBedError] = useState<string>();
   const loc = locale as Locale;
   const a = (key: AdminKey, vars?: Record<string, string | number>) => fillAdmin(dict, key, vars);
 
@@ -71,6 +72,7 @@ export default function RadioAdmin({ dict, locale }: { dict: AdminDictionary; lo
     form.set('file', file);
     form.set('folder', 'radio');
     const result = await api<{ path: string }>('/upload', { form });
+    setBedError(result.ok ? undefined : uploadError(result.error, dict));
     if (result.ok) setBed(result.data.path);
   };
 
@@ -163,6 +165,11 @@ export default function RadioAdmin({ dict, locale }: { dict: AdminDictionary; lo
             <button type="button" className={ghost} onClick={() => setBed(null)}>
               {dict['common.remove']}
             </button>
+          )}
+          {bedError && (
+            <p role="alert" className="basis-full text-sm font-semibold text-hibiscus">
+              {bedError}
+            </p>
           )}
         </div>
       </section>

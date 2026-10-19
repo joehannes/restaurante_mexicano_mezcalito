@@ -298,7 +298,7 @@ Sources:
 - Google Rich Results test for Restaurant, Menu and Event. Lighthouse SEO and a11y ≥ 95.
 
 ## Prerequisites and open items
-- **Cloudflare account and API token** for the Worker, D1, KV, R2, the Durable Object and Workers AI; the GitHub Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. **Domain:** take over mezcalitobarandgrill.com from VAS (needs DNS access) or use a new domain.
+- **Cloudflare:** D1 (migrated and seeded), KV and R2 are created and wired into `wrangler.jsonc`, with R2 writes held inside the free tier (see docs/development.md → *Staying on the free plan*). Still needed: an API token as the GitHub Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, so CI deploys. **Domain:** take over mezcalitobarandgrill.com from VAS (needs DNS access) or use a new domain.
 - **Cloudflare Access** application for `/admin` and `/api/admin`, and the owner's email in `OWNER_EMAILS`.
 - **Payments:** an Azul merchant account (then check the signature field order against Azul's guide and run a sandbox payment) and/or a PayPal business app.
 - **Messages:** a WhatsApp Business number on the Cloud API with the five templates listed in docs/development.md approved in four languages; a Resend account for email.

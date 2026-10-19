@@ -41,6 +41,8 @@ const en = {
   'common.translating': 'Translating…',
   'common.translateHint': 'Machine drafts — read them before saving.',
   'common.upload': 'Upload photo',
+  'common.uploadFailed': 'Upload failed. Check the file type and keep it under 8 MB.',
+  'common.storageFull': 'Media storage is at its free limit, so nothing more can be uploaded.',
   'common.remove': 'Remove',
 
   'board.title': 'Orders',
@@ -329,6 +331,8 @@ const es: Record<AdminKey, string> = {
   'common.translating': 'Traduciendo…',
   'common.translateHint': 'Borradores automáticos — revísalos antes de guardar.',
   'common.upload': 'Subir foto',
+  'common.uploadFailed': 'No se pudo subir. Revisa el tipo de archivo y que pese menos de 8 MB.',
+  'common.storageFull': 'El almacenamiento de fotos llegó a su límite gratuito; no se puede subir nada más.',
   'common.remove': 'Quitar',
 
   'board.title': 'Pedidos',

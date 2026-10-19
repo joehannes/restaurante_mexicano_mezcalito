@@ -9,10 +9,10 @@
 
   // Menu, nights, seasons, settings, orders and reservations.
   "d1_databases": [
-    { "binding": "DB", "database_name": "mezcalito", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "mezcalito", "database_id": "d959a574-b8c0-4651-8995-ce2710a9c805", "migrations_dir": "migrations" }
   ],
   // Bumped on every staff save so edge-cached pages are rebuilt.
-  "kv_namespaces": [{ "binding": "CACHE" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "2aace4b6d03f46f7914c64627643f7ba" }],
   // Photos, flyers, voice clips and music beds.
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "mezcalito-media" }],
   "ai": { "binding": "AI" },

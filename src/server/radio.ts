@@ -15,6 +15,7 @@ import { selectPlate, type Reason } from '../domain/selector';
 import type { Locale } from '../domain/types';
 import { localized } from '../domain/types';
 import { t } from '../i18n/ui';
+import { putMedia } from './media';
 import { selectorContext } from './selector';
 
 export interface StoredNode extends RadioNode {
@@ -92,7 +93,7 @@ export async function renderVoice(env: Env, node: StoredNode): Promise<RenderRes
       const bytes = await audioBytes(await env.AI.run(engine.model as never, engine.input(text) as never));
       if (!bytes?.length) throw new Error('no audio');
       const hash = await fingerprint(text);
-      await env.MEDIA.put(clipKey(node.id, locale, hash), bytes, { httpMetadata: { contentType: 'audio/mpeg', cacheControl: 'public, max-age=31536000, immutable' } });
+      if (!(await putMedia(env, clipKey(node.id, locale, hash), bytes, bytes.byteLength, 'audio/mpeg'))) throw new Error('media storage at its free limit');
       voice[locale] = hash;
       result[locale] = 'ok';
     } catch (error) {

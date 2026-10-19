@@ -138,12 +138,30 @@ Reminders go out about three hours before same-day bookings.
 ## Deploying
 
 `main` deploys from GitHub Actions once the repository has the
-`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets. Before the
-first deploy:
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets. The workflow
+applies new migrations, then deploys.
 
-1. `wrangler d1 create mezcalito` and put its id in `wrangler.jsonc`.
-2. `wrangler kv namespace create CACHE` and `wrangler r2 bucket create mezcalito-media`.
-3. Seed once: `wrangler d1 execute mezcalito --remote --file=seed/seed.sql`
-   (it replaces the content tables — never run it again after staff start editing).
-4. Set the secrets above, then point the domain at the Worker. The old
-   site's `.html` pages redirect to their new homes.
+The account's resources exist and their ids are in `wrangler.jsonc`:
+D1 `mezcalito` (all migrations applied and seeded on 19 Oct 2026), KV
+`mezcalito-cache` and R2 `mezcalito-media`. **Never run `seed/seed.sql`
+against it again**: it replaces the content tables staff now edit.
+
+To go live, set the secrets above with `wrangler secret put`, then point
+the domain at the Worker. The old site's `.html` pages redirect to their
+new homes.
+
+### Staying on the free plan
+
+Keep the account on **Workers Free**. There, Workers requests, D1, KV,
+Durable Objects and Workers AI stop with an error at their daily limits
+instead of billing. R2 is the exception: it has no spending cap and bills
+past 10 GB stored or a million writes a month. So every R2 write goes
+through `src/server/media.ts`, which refuses once the bucket would pass
+9 GB or 25,000 writes in a day (counted in the `media_usage` table). Staff
+then see "Media storage is at its free limit". R2 reads stay free, because
+Workers Free's 100,000 requests a day are fewer than R2's ten million free
+reads a month.
+
+As a backstop, add a budget alert under Billing → Billable usage
+(for example at US$1). It emails you if anything ever starts to cost
+money.
