@@ -1,6 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "mezcalito",
+  // Not plain "mezcalito": a first deploy that failed halfway left that name
+  // half-created on Cloudflare, and every upload to it since returns "does not exist".
+  "name": "mezcalito-rd",
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
