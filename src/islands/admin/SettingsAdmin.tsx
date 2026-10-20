@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { DayOverride, ReservationRules } from '../../domain/capacity';
 import type { Closure, DeliveryZone, Localized, PricingSettings, TimeRange, WeeklyHours } from '../../domain/types';
 import { fillAdmin, type AdminDictionary, type AdminLocale } from '../../i18n/admin';
+import type { PaymentSettings } from '../../domain/adminInput';
 import type { SiteSettings } from '../../server/content';
 import { api, toCentavos, toPesos } from './api';
 import { button, Field, ghost, field, input, LocalizedFields } from './ui';
@@ -57,6 +58,113 @@ function DayRange({ label, value, onChange, dict }: { label: string; value: Time
   );
 }
 
+interface StoredCredentials {
+  azul: { merchantId: string; merchantName: string; merchantType: string; mode: 'test' | 'live'; hasKey: boolean } | null;
+  paypal: { clientId: string; mode: 'test' | 'live'; hasKey: boolean } | null;
+  fromWorker: { azul: boolean; paypal: boolean };
+}
+
+/**
+ * The online providers' credentials, owners only. Secrets are never shown
+ * again once saved; leave a secret blank to keep it.
+ */
+function CredentialsCard({ dict }: { dict: AdminDictionary }) {
+  const [stored, setStored] = useState<StoredCredentials>();
+  const [azul, setAzul] = useState({ merchantId: '', merchantName: '', merchantType: '', authKey: '', mode: 'test' as 'test' | 'live' });
+  const [paypal, setPaypal] = useState({ clientId: '', secret: '', mode: 'test' as 'test' | 'live' });
+  const [status, setStatus] = useState<Status | 'password'>('idle');
+  const load = () =>
+    api<StoredCredentials>('/payments').then((r) => {
+      if (!r.ok) return;
+      setStored(r.data);
+      if (r.data.azul) setAzul((a) => ({ ...a, ...r.data.azul!, authKey: '' }));
+      if (r.data.paypal) setPaypal((p) => ({ ...p, ...r.data.paypal!, secret: '' }));
+    });
+  useEffect(() => {
+    load();
+  }, []);
+  // Not an owner: the card is not for them.
+  if (!stored) return null;
+
+  const save = async (body: unknown) => {
+    setStatus('saving');
+    const result = await api('/payments', { method: 'PUT', body });
+    setStatus(result.ok ? 'saved' : result.error === 'change_password_first' ? 'password' : 'error');
+    if (result.ok) load();
+  };
+  const mode = (value: 'test' | 'live', set: (m: 'test' | 'live') => void) => (
+    <Field label={dict['payments.mode']}>
+      <select value={value} onChange={(e) => set(e.target.value as 'test' | 'live')} className={input}>
+        <option value="test">{dict['payments.mode.test']}</option>
+        <option value="live">{dict['payments.mode.live']}</option>
+      </select>
+    </Field>
+  );
+  return (
+    <section className="rounded-2xl bg-white p-4">
+      <h2 className="mb-1 font-display text-2xl uppercase">{dict['payments.credentials']}</h2>
+      <p className="mb-4 text-sm text-ink/70">{dict['payments.credentialsIntro']}</p>
+      <div className="grid gap-6 md:grid-cols-2">
+        <fieldset className="grid content-start gap-3 rounded-xl border-2 border-ink/10 p-3">
+          <legend className="px-1 font-bold">Azul {stored.azul && <span className="text-jungle">✓</span>}</legend>
+          {stored.fromWorker.azul && <p className="rounded bg-gold/30 p-2 text-xs">{dict['payments.fromWorker']}</p>}
+          <Field label="Merchant ID">
+            <input value={azul.merchantId} onChange={(e) => setAzul({ ...azul, merchantId: e.target.value })} className={input} autoComplete="off" />
+          </Field>
+          <Field label={dict['payments.merchantName']}>
+            <input value={azul.merchantName} onChange={(e) => setAzul({ ...azul, merchantName: e.target.value })} className={input} placeholder="Mezcalito Bar and Grill" />
+          </Field>
+          <Field label="Auth key" hint={stored.azul?.hasKey ? dict['payments.keepSecret'] : undefined}>
+            <input type="password" value={azul.authKey} onChange={(e) => setAzul({ ...azul, authKey: e.target.value })} className={input} autoComplete="new-password" />
+          </Field>
+          {mode(azul.mode, (m) => setAzul({ ...azul, mode: m }))}
+          <p className="flex flex-wrap gap-2">
+            <button type="button" className={button} onClick={() => save({ azul })}>
+              {dict['common.save']}
+            </button>
+            {stored.azul && (
+              <button type="button" className={`${ghost} text-hibiscus`} onClick={() => confirm(dict['common.confirmDelete']) && save({ azul: { clear: true } })}>
+                {dict['common.remove']}
+              </button>
+            )}
+          </p>
+        </fieldset>
+        <fieldset className="grid content-start gap-3 rounded-xl border-2 border-ink/10 p-3">
+          <legend className="px-1 font-bold">PayPal {stored.paypal && <span className="text-jungle">✓</span>}</legend>
+          {stored.fromWorker.paypal && <p className="rounded bg-gold/30 p-2 text-xs">{dict['payments.fromWorker']}</p>}
+          <Field label="Client ID">
+            <input value={paypal.clientId} onChange={(e) => setPaypal({ ...paypal, clientId: e.target.value })} className={input} autoComplete="off" />
+          </Field>
+          <Field label="Secret" hint={stored.paypal?.hasKey ? dict['payments.keepSecret'] : undefined}>
+            <input type="password" value={paypal.secret} onChange={(e) => setPaypal({ ...paypal, secret: e.target.value })} className={input} autoComplete="new-password" />
+          </Field>
+          {mode(paypal.mode, (m) => setPaypal({ ...paypal, mode: m }))}
+          <p className="flex flex-wrap gap-2">
+            <button type="button" className={button} onClick={() => save({ paypal })}>
+              {dict['common.save']}
+            </button>
+            {stored.paypal && (
+              <button type="button" className={`${ghost} text-hibiscus`} onClick={() => confirm(dict['common.confirmDelete']) && save({ paypal: { clear: true } })}>
+                {dict['common.remove']}
+              </button>
+            )}
+          </p>
+        </fieldset>
+      </div>
+      {status === 'saved' && <p className="mt-3 font-semibold text-jungle">✓ {dict['common.saved']}</p>}
+      {status === 'error' && <p className="mt-3 font-semibold text-hibiscus">{dict['common.error']}</p>}
+      {status === 'password' && (
+        <p className="mt-3 font-semibold text-hibiscus">
+          {dict['payments.passwordFirst']}{' '}
+          <a href="/admin/staff#password" className="underline">
+            {dict['password.change']} →
+          </a>
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default function SettingsAdmin({ dict, locale }: { dict: AdminDictionary; locale: AdminLocale }) {
   const [s, setS] = useState<Settings>();
   const [status, setStatus] = useState<Record<string, Status>>({});
@@ -98,12 +206,38 @@ export default function SettingsAdmin({ dict, locale }: { dict: AdminDictionary;
     </Field>
   );
   const zones: DeliveryZone[] = s.deliveryZones ?? [];
+  const payments: PaymentSettings = s.payments ?? { cash: true, cardOnDelivery: true, azul: true, paypal: true, note: null };
 
   return (
     <div className="grid gap-6">
       <h1 className="font-display text-3xl uppercase">{dict['settings.title']}</h1>
 
       {card('hours', dict['settings.hours'], hours(s.hours, (v) => set('hours', v)))}
+
+      {card(
+        'payments',
+        dict['payments.title'],
+        <>
+          <p className="text-sm text-ink/70">{dict['payments.intro']}</p>
+          {(
+            [
+              ['cash', 'payments.cash'],
+              ['cardOnDelivery', 'payments.cardOnDelivery'],
+              ['azul', 'payments.azul'],
+              ['paypal', 'payments.paypal'],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-2 font-semibold">
+              <input type="checkbox" className="size-5" checked={payments[key]} onChange={(e) => set('payments', { ...payments, [key]: e.target.checked })} />
+              {dict[label]}
+            </label>
+          ))}
+          <LocalizedFields label={dict['payments.note']} value={payments.note ?? {}} onChange={(note) => set('payments', { ...payments, note: note as Localized })} dict={dict} multiline />
+        </>,
+        () => ({ ...payments, note: payments.note?.en?.trim() ? payments.note : null }),
+      )}
+
+      <CredentialsCard dict={dict} />
 
       {card(
         'closures',

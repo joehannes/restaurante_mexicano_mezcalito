@@ -1,0 +1,44 @@
+---
+/**
+ * One of the house illustrations (public/img/art, drawn with Workers AI from
+ * scripts/art/prompts.json), pasted up like a gig poster, with a die-cut
+ * sticker slapped on a corner.
+ */
+interface Props {
+  /** File name in public/img/art, without extension. */
+  name: string;
+  alt: string;
+  /** Natural size of the 1200px-wide file. */
+  width?: number;
+  height?: number;
+  tilt?: number;
+  /** A sticker from public/img/stickers. */
+  sticker?: string;
+  class?: string;
+}
+const { name, alt, width = 1200, height = 900, tilt = 1.5, sticker, class: extra } = Astro.props;
+---
+<figure class:list={['poster reveal reveal-pop relative', extra]} style={`--tilt:${tilt}deg`}>
+  <img
+    src={`/img/art/${name}-640.webp`}
+    srcset={`/img/art/${name}-640.webp 640w, /img/art/${name}.webp 1200w`}
+    sizes="(min-width: 768px) 42rem, 100vw"
+    alt={alt}
+    width={width}
+    height={height}
+    loading="lazy"
+    decoding="async"
+    class="w-full rounded-2xl border-4 border-ink object-cover shadow-[6px_6px_0_var(--c-ink)]"
+  />
+  {sticker && (
+    <img
+      src={`/img/stickers/${sticker}.webp`}
+      alt=""
+      width="128"
+      height="128"
+      loading="lazy"
+      class="bob pointer-events-none absolute -right-4 -bottom-6 w-20 drop-shadow-[2px_3px_0_rgb(20_18_16/0.35)] md:w-28"
+      style={`--tilt:${-tilt * 4}deg; --beat:5.5s`}
+    />
+  )}
+</figure>

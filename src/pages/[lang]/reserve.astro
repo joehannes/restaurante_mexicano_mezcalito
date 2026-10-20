@@ -1,6 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import Site from '../../layouts/Site.astro';
+import Poster from '../../components/Poster.astro';
 import Reserve from '../../islands/Reserve';
 import { addDays } from '../../domain/schedule';
 import { dictionary, t } from '../../i18n/ui';
@@ -24,6 +25,7 @@ const days = Array.from({ length: Math.min(rules.maxDaysAhead, 21) }, (_, i) => 
   <div class="mx-auto max-w-2xl px-4 pt-8 pb-6">
     <h1 class="font-display text-5xl uppercase">{t(locale, 'reserve.title')}</h1>
     <p class="mt-2">{t(locale, 'reserve.intro')}</p>
+    <Poster name="reserve" alt={t(locale, 'art.reserve')} tilt={-1.5} sticker="margarita" class="mt-6" />
   </div>
   <Reserve
     client:load

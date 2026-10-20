@@ -2,7 +2,7 @@
  * Reads and writes behind the staff admin. Guests never reach these; every
  * caller has passed `guard` and every input has passed `domain/adminInput`.
  */
-import type { ItemPatch, SeasonInput, SettingKey, SpecialInput } from '../domain/adminInput';
+import type { CategoryInput, GroupInput, ItemPatch, PricedChoice, SeasonInput, SettingKey, SpecialInput } from '../domain/adminInput';
 import { canMove, isOrderStatus, OPEN_STATUSES, type OrderStatus } from '../domain/orderStatus';
 import type { Role } from '../domain/roles';
 import type { OrderMode } from '../domain/types';
@@ -106,7 +106,7 @@ export async function moveOrder(env: Env, code: string, to: unknown, actor: stri
 
 // ── Menu ──────────────────────────────────────────────────────────────────
 
-const ITEM_COLUMNS: Record<keyof ItemPatch, string> = {
+const ITEM_COLUMNS: Record<Exclude<keyof ItemPatch, 'groups'>, string> = {
   categoryId: 'category_id',
   name: 'name',
   description: 'description',
@@ -124,7 +124,15 @@ const column = (value: unknown) =>
   value === null ? null : typeof value === 'boolean' ? Number(value) : typeof value === 'object' ? JSON.stringify(value) : value;
 
 export async function updateItem(db: D1Database, id: string, patch: ItemPatch): Promise<boolean> {
-  const entries = Object.entries(patch) as [keyof ItemPatch, unknown][];
+  const { groups, ...columns } = patch;
+  if (groups) {
+    if (!(await db.prepare('SELECT 1 FROM menu_items WHERE id = ?').bind(id).first())) return false;
+    await db.batch([
+      db.prepare('DELETE FROM item_modifier_groups WHERE item_id = ?').bind(id),
+      ...groups.map((g, i) => db.prepare('INSERT OR IGNORE INTO item_modifier_groups (item_id, group_id, position) SELECT ?, id, ? FROM modifier_groups WHERE id = ?').bind(id, i, g)),
+    ]);
+  }
+  const entries = Object.entries(columns) as [Exclude<keyof ItemPatch, 'groups'>, unknown][];
   if (!entries.length) return true;
   const sets = entries.map(([k]) => `${ITEM_COLUMNS[k]} = ?`).join(', ');
   const result = await db
@@ -139,6 +147,114 @@ export async function createItem(db: D1Database, id: string, patch: Required<Pic
   await db.prepare('INSERT INTO menu_items (id, category_id, name, price, position) VALUES (?, ?, ?, ?, ?)').bind(id, patch.categoryId, JSON.stringify(patch.name), patch.price, position!.p).run();
   const { categoryId: _c, name: _n, price: _p, ...rest } = patch;
   await updateItem(db, id, rest);
+}
+
+/** Past orders keep their own copy of the name and price, so a dish can go for good. */
+export async function deleteItem(db: D1Database, id: string) {
+  return (await db.prepare('DELETE FROM menu_items WHERE id = ?').bind(id).run()).meta.changes > 0;
+}
+
+/** Saves the order of dishes within their sections: `ids` first to last. */
+export async function orderItems(db: D1Database, ids: string[]) {
+  await db.batch(ids.map((id, i) => db.prepare('UPDATE menu_items SET position = ? WHERE id = ?').bind(i, id)));
+}
+
+export const slugify = (text: string, max = 40) =>
+  text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, max);
+
+/** An id from `name` that `taken` does not hold yet. */
+function freshId(name: string, taken: Set<string>, fallback: string) {
+  const base = slugify(name) || fallback;
+  let id = base.length > 1 ? base : `${base}-1`;
+  for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
+  taken.add(id);
+  return id;
+}
+
+// ── Menu sections ─────────────────────────────────────────────────────────
+
+export async function createCategory(db: D1Database, c: CategoryInput) {
+  const { results } = await db.prepare('SELECT id FROM categories').all<{ id: string }>();
+  const id = freshId(c.name.en, new Set(results.map((r) => r.id)), 'section');
+  await db
+    .prepare('INSERT INTO categories (id, name, hidden, position) VALUES (?, ?, ?, (SELECT COALESCE(MAX(position), 0) + 1 FROM categories))')
+    .bind(id, JSON.stringify(c.name), Number(c.hidden))
+    .run();
+  return id;
+}
+
+export async function updateCategory(db: D1Database, id: string, c: CategoryInput) {
+  return (await db.prepare('UPDATE categories SET name = ?, hidden = ? WHERE id = ?').bind(JSON.stringify(c.name), Number(c.hidden), id).run()).meta.changes > 0;
+}
+
+/** Only an empty section can go; move or delete its dishes first. */
+export async function deleteCategory(db: D1Database, id: string): Promise<'ok' | 'not_empty' | 'not_found'> {
+  if (await db.prepare('SELECT 1 FROM menu_items WHERE category_id = ? LIMIT 1').bind(id).first()) return 'not_empty';
+  return (await db.prepare('DELETE FROM categories WHERE id = ?').bind(id).run()).meta.changes > 0 ? 'ok' : 'not_found';
+}
+
+export async function orderCategories(db: D1Database, ids: string[]) {
+  await db.batch(ids.map((id, i) => db.prepare('UPDATE categories SET position = ? WHERE id = ?').bind(i, id)));
+}
+
+// ── Sizes and extras ──────────────────────────────────────────────────────
+
+/** Replaces a dish's sizes with `list`; sizes kept by id keep their sold-out switch. */
+export async function replaceVariants(db: D1Database, itemId: string, list: PricedChoice[]) {
+  if (!(await db.prepare('SELECT 1 FROM menu_items WHERE id = ?').bind(itemId).first())) return false;
+  const { results } = await db.prepare('SELECT id FROM item_variants WHERE item_id = ?').bind(itemId).all<{ id: string }>();
+  const existing = new Set(results.map((r) => r.id));
+  const taken = new Set(list.flatMap((v) => (v.id && existing.has(v.id) ? [v.id] : [])));
+  const rows = list.map((v) => ({ ...v, id: v.id && existing.has(v.id) ? v.id : freshId(v.label.en, taken, 'size') }));
+  await db.batch([
+    db.prepare(`DELETE FROM item_variants WHERE item_id = ? AND id NOT IN (${rows.map(() => '?').join(', ') || "''"})`).bind(itemId, ...rows.map((r) => r.id)),
+    ...rows.map((v, i) =>
+      db
+        .prepare(
+          `INSERT INTO item_variants (item_id, id, label, price, position) VALUES (?1, ?2, ?3, ?4, ?5)
+           ON CONFLICT (item_id, id) DO UPDATE SET label = ?3, price = ?4, position = ?5`,
+        )
+        .bind(itemId, v.id, JSON.stringify(v.label), v.price, i),
+    ),
+  ]);
+  return true;
+}
+
+/** Creates or replaces an extras group (sides, sauces, add-ons) and its options. */
+export async function saveGroup(db: D1Database, g: GroupInput, id?: string) {
+  if (id === undefined) {
+    const { results } = await db.prepare('SELECT id FROM modifier_groups').all<{ id: string }>();
+    id = freshId(g.label.en, new Set(results.map((r) => r.id)), 'extras');
+  } else if (!(await db.prepare('SELECT 1 FROM modifier_groups WHERE id = ?').bind(id).first())) return undefined;
+  const { results } = await db.prepare('SELECT id FROM modifier_options WHERE group_id = ?').bind(id).all<{ id: string }>();
+  const existing = new Set(results.map((r) => r.id));
+  const taken = new Set(g.options.flatMap((o) => (o.id && existing.has(o.id) ? [o.id] : [])));
+  const options = g.options.map((o) => ({ ...o, id: o.id && existing.has(o.id) ? o.id : freshId(o.label.en, taken, 'option') }));
+  await db.batch([
+    db
+      .prepare('INSERT INTO modifier_groups (id, label, min, max) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (id) DO UPDATE SET label = ?2, min = ?3, max = ?4')
+      .bind(id, JSON.stringify(g.label), g.min, g.max),
+    db.prepare(`DELETE FROM modifier_options WHERE group_id = ? AND id NOT IN (${options.map(() => '?').join(', ') || "''"})`).bind(id, ...options.map((o) => o.id)),
+    ...options.map((o, i) =>
+      db
+        .prepare(
+          `INSERT INTO modifier_options (group_id, id, label, price, position) VALUES (?1, ?2, ?3, ?4, ?5)
+           ON CONFLICT (group_id, id) DO UPDATE SET label = ?3, price = ?4, position = ?5`,
+        )
+        .bind(id, o.id, JSON.stringify(o.label), o.price, i),
+    ),
+  ]);
+  return id;
+}
+
+export async function deleteGroup(db: D1Database, id: string) {
+  return (await db.prepare('DELETE FROM modifier_groups WHERE id = ?').bind(id).run()).meta.changes > 0;
 }
 
 export async function setOptionSoldOut(db: D1Database, groupId: string, optionId: string, soldOut: boolean) {
@@ -167,6 +283,8 @@ export async function adminMenu(db: D1Database) {
     groups: (groups!.results as Record<string, unknown>[]).map((g) => ({
       id: String(g.id),
       label: JSON.parse(String(g.label)),
+      min: Number(g.min),
+      max: Number(g.max),
       options: (options!.results as Record<string, unknown>[])
         .filter((o) => o.group_id === g.id)
         .map((o) => ({ id: String(o.id), label: JSON.parse(String(o.label)), price: Number(o.price), soldOut: !!o.sold_out })),

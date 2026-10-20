@@ -15,7 +15,7 @@ export { KitchenRoom } from './server/kitchen';
 const PUBLIC_TAG = /^order:MZ-[A-Z0-9]{4}$/;
 
 /** Public pages that look the same for every guest, without a query string. */
-const CACHEABLE = /^\/(en|es|fr|de)\/((menu|tonight|reserve|selector|radio|parties|story|find-us|season\/[a-z0-9-]+))?$/;
+const CACHEABLE = /^\/(en|es|fr|de)\/((menu|tonight|reserve|selector|radio|parties|story|find-us|gallery|event|event\/[a-z0-9-]+|season\/[a-z0-9-]+))?$/;
 /** Edge copies live a minute: the hero follows the time of day and "open now" the clock. */
 const EDGE_SECONDS = 60;
 

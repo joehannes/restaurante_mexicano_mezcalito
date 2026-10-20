@@ -4,7 +4,7 @@ import { env } from 'cloudflare:workers';
 /** Photos, flyers and audio from R2. Keys are random and never reused, so they cache forever. */
 export const GET: APIRoute = async ({ params, request }) => {
   const key = String(params.key ?? '');
-  if (!/^[a-z-]{1,20}\/[\w-]{1,80}\.(jpg|png|webp|avif|mp3)$/.test(key)) return new Response(null, { status: 404 });
+  if (!/^[a-z-]{1,20}\/[\w-]{1,80}\.(jpg|png|webp|avif|mp3|mp4)$/.test(key)) return new Response(null, { status: 404 });
   const object = await env.MEDIA.get(key, { onlyIf: request.headers, range: request.headers });
   if (!object) return new Response(null, { status: 404 });
   const headers = new Headers();

@@ -29,6 +29,10 @@ interface Props {
   orderHref: string;
   /** Online payment providers that are set up; none hides paying online. */
   onlineProviders: ('azul' | 'paypal')[];
+  /** Paying in person, each switched on or off in the admin. */
+  offline: { cash: boolean; card_on_delivery: boolean };
+  /** The restaurant's note about paying, e.g. which currencies the till takes. */
+  payNote?: string;
 }
 
 type PayChoice = Exclude<PaymentMethod, 'online'> | 'azul' | 'paypal';
@@ -49,7 +53,10 @@ export default function Checkout(props: Props) {
   const [reference, setReference] = useState('');
   const [table, setTable] = useState('');
   const [notes, setNotes] = useState('');
-  const [choice, setChoice] = useState<PayChoice>('cash');
+  const offered: PayChoice[] = [...(['cash', 'card_on_delivery'] as const).filter((p) => props.offline[p]), ...props.onlineProviders];
+  // Online switched on but not set up, everything else off: cash, as the server also allows.
+  const choices: PayChoice[] = offered.length ? offered : ['cash'];
+  const [choice, setChoice] = useState<PayChoice>(choices[0] ?? 'cash');
   const payment: PaymentMethod = choice === 'azul' || choice === 'paypal' ? 'online' : choice;
   const [errors, setErrors] = useState<FieldError[]>([]);
   const [problem, setProblem] = useState<string>();
@@ -277,7 +284,7 @@ export default function Checkout(props: Props) {
         <section>
           <h2 className="font-display text-2xl uppercase">{dict['checkout.pay']}</h2>
           <div className="mt-3 grid gap-2">
-            {(['cash', 'card_on_delivery', ...props.onlineProviders] as const).map((p) => (
+            {choices.map((p) => (
               <label key={p} className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 font-semibold ${choice === p ? 'border-ink bg-gold' : 'border-ink/15 bg-white'}`}>
                 <input type="radio" name="payment" className="accent-ink" checked={choice === p} onChange={() => setChoice(p)} />
                 {p === 'paypal'
@@ -286,6 +293,11 @@ export default function Checkout(props: Props) {
               </label>
             ))}
             {props.onlineProviders.length === 0 && <p className="px-1 text-sm text-ink/60">{dict['checkout.pay.onlineSoon']}</p>}
+            {props.payNote && (
+              <p className="rounded-xl bg-lagoon/15 px-4 py-3 text-sm">
+                <span className="font-bold">{dict['checkout.pay.note']}:</span> {props.payNote}
+              </p>
+            )}
           </div>
         </section>
       </div>

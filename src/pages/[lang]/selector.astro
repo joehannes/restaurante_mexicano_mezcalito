@@ -1,6 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import Site from '../../layouts/Site.astro';
+import Poster from '../../components/Poster.astro';
 import Selector from '../../islands/Selector';
 import { dictionary, t } from '../../i18n/ui';
 import { loadMenu } from '../../server/menu';
@@ -15,6 +16,7 @@ const menu = (await loadMenu(env.DB)).filter((i) => !i.hidden);
   <div class="mx-auto max-w-3xl px-4 pt-8 pb-6">
     <h1 class="font-display text-5xl uppercase md:text-6xl">{t(locale, 'selector.title')}</h1>
     <p class="mt-2 text-lg">{t(locale, 'selector.intro')}</p>
+    <Poster name="selector" alt={t(locale, 'art.selector')} tilt={-1.2} sticker="chili" class="mt-6" />
   </div>
   <Selector
     client:load

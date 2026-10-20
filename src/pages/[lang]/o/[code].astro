@@ -32,7 +32,7 @@ const labels = Object.fromEntries(
 // Waiting for an online payment: only the guest with the key can retry or switch to paying in person.
 const unpaid = order?.status === 'awaiting_payment' && !!order.items;
 const payFailed = order?.paymentStatus === 'failed' || Astro.url.searchParams.get('pay') === 'failed';
-const providers = unpaid ? onlineProviders(env) : [];
+const providers = unpaid ? await onlineProviders(env) : [];
 const PROVIDER_NAMES = { azul: 'Azul', paypal: 'PayPal' } as const;
 const wa = `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`${code}`)}`;
 ---

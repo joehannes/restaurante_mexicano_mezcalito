@@ -1,6 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import Site from '../../layouts/Site.astro';
+import Poster from '../../components/Poster.astro';
 import Radio, { type RadioQuestion } from '../../islands/Radio';
 import { byPopularity } from '../../domain/radioTree';
 import { localized } from '../../domain/types';
@@ -36,6 +37,7 @@ const bed = setting ? (JSON.parse(setting.value) as { bed: string | null }).bed 
 <Site ctx={ctx} path="/radio" title={`${t(locale, 'radio.title')} — Mezcalito`} description={t(locale, 'radio.intro')}>
   <div class="mx-auto max-w-3xl px-4 pt-8 pb-6">
     <h1 class="font-display text-5xl uppercase md:text-6xl">📻 {t(locale, 'radio.title')}</h1>
+    <Poster name="radio" alt={t(locale, 'art.radio')} tilt={1.5} sticker="palm" class="mt-6" />
   </div>
   <Radio
     client:load

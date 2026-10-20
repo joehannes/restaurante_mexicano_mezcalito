@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { settings, specials } from '../../seed/data';
-import { parseItemPatch, parseLocalized, parseSeason, parseSetting, parseSpecial } from './adminInput';
+import { parseChoices, parseCredentials, parseEvent, parseGallery, parseGroup, parseItemPatch, parseLocalized, parseSeason, parseSetting, parseSpecial } from './adminInput';
 import { draftFromPreset, PRESETS } from './seasonPresets';
 
 describe('parseLocalized', () => {
@@ -93,5 +93,70 @@ describe('parseSeason', () => {
   it('rejects inverted dates, unknown blocks and outside images', () => {
     const r = parseSeason({ ...draft, endsOn: '2026-01-01', blocks: [{ type: 'iframe', src: 'x' }], ogImage: 'https://evil.example/og.png' });
     expect(r).toEqual({ ok: false, errors: ['endsOn', 'blocks', 'ogImage'] });
+  });
+});
+
+describe('parseChoices', () => {
+  it('keeps known ids and checks labels and prices', () => {
+    expect(parseChoices([{ id: 'chicken', label: { en: 'Chicken' }, price: 119_900 }, { label: { en: 'Goat' }, price: 149_500 }])).toEqual({
+      ok: true,
+      value: [{ id: 'chicken', label: { en: 'Chicken' }, price: 119_900 }, { label: { en: 'Goat' }, price: 149_500 }],
+    });
+    expect(parseChoices([{ label: { en: 'Free' }, price: -1 }]).ok).toBe(false);
+    expect(parseChoices([{ label: {}, price: 0 }]).ok).toBe(false);
+  });
+});
+
+describe('parseGroup', () => {
+  it('needs a name and a sane pick range', () => {
+    expect(parseGroup({ label: { en: 'Side' }, min: 1, max: 1, options: [] }).ok).toBe(true);
+    expect(parseGroup({ label: { en: 'Side' }, min: 2, max: 1, options: [] })).toEqual({ ok: false, errors: ['max'] });
+  });
+});
+
+describe('parseGallery', () => {
+  it('takes site photos, uploads and clips', () => {
+    const photo = parseGallery({ kind: 'photo', src: '/img/polaroids/sip.webp', caption: { en: 'Sip' }, tilt: 4.25 });
+    expect(photo).toEqual({ ok: true, value: { kind: 'photo', src: '/img/polaroids/sip.webp', poster: null, caption: { en: 'Sip' }, tilt: 4.3, onHome: true, published: true } });
+    expect(parseGallery({ kind: 'video', src: '/media/gallery/a.mp4', poster: '/media/gallery/a.webp', caption: { en: 'Go' }, tilt: 0 }).ok).toBe(true);
+  });
+  it('refuses other places, a photo as video and wild tilts', () => {
+    expect(parseGallery({ kind: 'photo', src: 'https://evil.example/x.jpg', caption: { en: 'x' }, tilt: 0 })).toEqual({ ok: false, errors: ['src'] });
+    expect(parseGallery({ kind: 'video', src: '/media/gallery/a.webp', caption: { en: 'x' }, tilt: 0 })).toEqual({ ok: false, errors: ['src'] });
+    expect(parseGallery({ kind: 'photo', src: '/img/a.webp', caption: { en: 'x' }, tilt: 40 })).toEqual({ ok: false, errors: ['tilt'] });
+  });
+});
+
+describe('parseEvent', () => {
+  const base = { slug: 'noche', title: { en: 'Noche' }, startsOn: '2026-10-31', endsOn: '2026-11-02', cta: 'book', color: 'sunset', highlights: [] };
+  it('accepts a full event', () => {
+    const r = parseEvent({ ...base, startTime: '18:00', endTime: '24:00', price: 99_900, highlights: [{ en: 'Karaoke' }], published: true });
+    expect(r.ok && r.value).toMatchObject({ slug: 'noche', startTime: '18:00', endTime: '24:00', price: 99_900, highlights: [{ en: 'Karaoke' }], published: true, kicker: null });
+  });
+  it('needs dates in order, a link for a link button, and a palette colour', () => {
+    expect(parseEvent({ ...base, endsOn: '2026-10-01' })).toEqual({ ok: false, errors: ['endsOn'] });
+    expect(parseEvent({ ...base, cta: 'link' })).toEqual({ ok: false, errors: ['ctaUrl'] });
+    expect(parseEvent({ ...base, cta: 'link', ctaUrl: 'http://insecure.example' })).toEqual({ ok: false, errors: ['ctaUrl'] });
+    expect(parseEvent({ ...base, color: 'cream' })).toEqual({ ok: false, errors: ['color'] });
+  });
+});
+
+describe('parseCredentials', () => {
+  const stored = { azul: { merchantId: '39038540035', merchantName: 'Mezcalito', merchantType: 'Restaurant', authKey: 'old-key', mode: 'test' as const } };
+  it('keeps a saved secret left blank', () => {
+    const r = parseCredentials({ azul: { merchantId: '39038540035', authKey: '', mode: 'live' } }, stored);
+    expect(r.ok && r.value.azul).toMatchObject({ authKey: 'old-key', mode: 'live' });
+  });
+  it('clears a provider and refuses a missing secret', () => {
+    expect(parseCredentials({ azul: { clear: true } }, stored)).toEqual({ ok: true, value: {} });
+    expect(parseCredentials({ paypal: { clientId: 'AbCdEfGhIjKlMn', secret: '' } }, {})).toEqual({ ok: false, errors: ['paypal.secret'] });
+  });
+});
+
+describe('payments setting', () => {
+  it('defaults every way to pay on, and never leaves none', () => {
+    expect(parseSetting('payments', {})).toEqual({ ok: true, value: { cash: true, cardOnDelivery: true, azul: true, paypal: true, note: null } });
+    const off = parseSetting('payments', { cash: false, cardOnDelivery: false, azul: false, paypal: false });
+    expect(off.ok && (off.value as { cash: boolean }).cash).toBe(true);
   });
 });

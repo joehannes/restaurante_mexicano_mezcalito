@@ -1,0 +1,12 @@
+---
+import '@fontsource/permanent-marker/latin-400.css';
+import Admin from '../../layouts/Admin.astro';
+import GalleryAdmin from '../../islands/admin/GalleryAdmin';
+import { adminPage, forbidden } from '../../server/adminPage';
+
+const page = adminPage(Astro, 'nights');
+if (!page) return forbidden();
+---
+<Admin title={page.dict['gallery.title']} section="/admin/gallery">
+  <GalleryAdmin client:load dict={page.dict} locale={page.locale} />
+</Admin>

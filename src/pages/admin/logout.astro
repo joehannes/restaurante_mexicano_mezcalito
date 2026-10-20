@@ -1,0 +1,9 @@
+---
+/** Ends a password session and goes back to the sign-in page. */
+import { clearSessionCookie } from '../../server/password';
+
+return new Response(null, {
+  status: 303,
+  headers: { location: '/admin/login', 'set-cookie': clearSessionCookie(Astro.url.protocol === 'https:'), 'cache-control': 'no-store' },
+});
+---

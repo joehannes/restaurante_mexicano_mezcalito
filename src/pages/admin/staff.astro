@@ -7,5 +7,5 @@ const page = adminPage(Astro, 'staff');
 if (!page) return forbidden();
 ---
 <Admin title={page.dict['staff.title']} section="/admin/staff">
-  <StaffAdmin client:load dict={page.dict} me={page.staff.email} />
+  <StaffAdmin client:load dict={page.dict} me={page.staff.email} viaPassword={page.staff.via === 'password'} />
 </Admin>

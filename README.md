@@ -30,6 +30,7 @@ All seven phases below are built, tested and running locally; what is left needs
 | 5. Seasons | Done: eight presets, a page per season, staff previews, generated share images. Día de Muertos is published for 24 Oct – 3 Nov. |
 | 6. Selector and Radio | Done: Workers AI with a rules fallback; voiced Radio over a synthesized riddim. |
 | 7. Polish | Done: PWA with offline menu, QR table mode, reorder, insights, edge caching, perf pass (home ships 1.9 KB of JS). |
+| 8. Delights and self-service | Done: polaroid wall from Mezcalito's own footage (photos and loops), marketing event pages, Workers AI illustrations and stickers; admin password sign-in, full menu CRUD (sizes, extras, sections), events, polaroid wall, and payment methods and credentials in the admin. |
 
 
 ---

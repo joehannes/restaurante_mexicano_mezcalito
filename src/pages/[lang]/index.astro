@@ -6,11 +6,15 @@ import FlyerCard from '../../components/FlyerCard.astro';
 import DishSingle from '../../components/DishSingle.astro';
 import JsonLd from '../../components/JsonLd.astro';
 import Reorder from '../../components/Reorder.astro';
+import PolaroidWall from '../../components/PolaroidWall.astro';
+import EventBanner from '../../components/EventBanner.astro';
 import { activeSpecials, parseClock, specialsOn, localNow } from '../../domain/schedule';
 import { localized } from '../../domain/types';
 import { formatClock } from '../../lib/format';
 import { restaurantJsonLd } from '../../lib/seo';
 import { t } from '../../i18n/ui';
+import { currentEvent, loadEvents } from '../../server/events';
+import { loadGallery } from '../../server/gallery';
 import { loadMenu } from '../../server/menu';
 import { href, notFound, pageContext } from '../../server/page';
 
@@ -18,7 +22,8 @@ const ctx = await pageContext(Astro.params.lang, Astro.request);
 if (!ctx) return notFound();
 const { locale, site } = ctx;
 
-const menu = await loadMenu(env.DB);
+const [menu, polaroids, events] = await Promise.all([loadMenu(env.DB), loadGallery(env.DB, { home: true }), loadEvents(env.DB, { today: ctx.today })]);
+const featured = currentEvent(events, ctx.today);
 const signatures = menu.filter((i) => i.tags.includes('signature') && !i.hidden).slice(0, 6);
 
 // An offer that runs all day, every day is on the line-up, not news for tonight's strip.
@@ -54,6 +59,7 @@ const ticker = [t(locale, 'brand.slogan'), t(locale, 'home.marqueeMega'), ...lin
     </div>
   </div>
   <Reorder locale={locale} />
+  {featured && <EventBanner event={featured} ctx={ctx} />}
 
   {(live.length > 0 || later.length > 0) && (
     <section class="bg-gold" aria-labelledby="now">
@@ -137,6 +143,44 @@ const ticker = [t(locale, 'brand.slogan'), t(locale, 'home.marqueeMega'), ...lin
       </div>
     </div>
   </section>
+
+  {polaroids.length > 0 && (
+    <section class="halftone relative mt-16 overflow-hidden bg-mezcal py-14 text-cream" aria-labelledby="moments">
+      <p class="pointer-events-none absolute -top-6 right-[-2rem] font-display text-[9rem] leading-none text-cream/5 uppercase select-none md:text-[14rem]" aria-hidden="true">One love</p>
+      {[
+        ['mic', 'top-24 right-3 w-16 md:right-10 md:w-24', 8, '0s'],
+        ['margarita', 'bottom-24 left-2 w-14 md:left-8 md:w-20', -10, '-1.5s'],
+        ['maracas', 'top-1/2 right-1 hidden w-20 md:block', 14, '-3s'],
+        ['speaker', 'top-[46%] left-1 hidden w-16 lg:block', -6, '-2.2s'],
+      ].map(([name, place, tilt, delay]) => (
+        <img src={`/img/stickers/${name}.webp`} alt="" width="128" height="128" loading="lazy" class={`bob pointer-events-none absolute z-10 h-auto drop-shadow-[2px_3px_0_rgb(20_18_16/0.4)] ${place}`} style={`--tilt:${tilt}deg; --d:${delay}; --beat:6s`} />
+      ))}
+      <div class="relative mx-auto max-w-6xl px-4">
+        <img
+          src="/img/art/fiesta-panorama-960.webp"
+          srcset="/img/art/fiesta-panorama-960.webp 900w, /img/art/fiesta-panorama.webp 1600w"
+          sizes="(min-width: 1152px) 72rem, 100vw"
+          alt={t(locale, 'art.fiesta')}
+          width="1600"
+          height="640"
+          loading="lazy"
+          decoding="async"
+          class="reveal reveal-pop mb-10 w-full rounded-2xl border-4 border-ink object-cover shadow-[6px_6px_0_var(--c-gold)]"
+          style="--tilt:-0.8deg"
+        />
+        <h2 id="moments" class="reveal flex flex-wrap items-center gap-3 font-display text-4xl text-gold uppercase md:text-5xl">
+          {t(locale, 'gallery.homeTitle')}
+          <span class="flash inline-block" aria-hidden="true">📸</span>
+        </h2>
+        <p class="reveal mt-2 max-w-2xl" style="--d:80ms">{t(locale, 'gallery.sub')}</p>
+        <PolaroidWall items={polaroids.slice(0, 10)} locale={locale} />
+        <p class="flex flex-wrap items-center gap-4">
+          <a href={href(locale, '/gallery')} class="jiggle shine rounded-full bg-gold px-5 py-2 font-bold text-ink">{t(locale, 'gallery.more')} →</a>
+          <span class="text-sm text-cream/80">{t(locale, 'gallery.hint')}</span>
+        </p>
+      </div>
+    </section>
+  )}
 
   <section class="mx-auto max-w-6xl px-4 pt-14" aria-labelledby="inside">
     <h2 id="inside" class="reveal font-display text-4xl uppercase md:text-5xl">{t(locale, 'home.inside')}</h2>
@@ -246,6 +290,15 @@ const ticker = [t(locale, 'brand.slogan'), t(locale, 'home.marqueeMega'), ...lin
   }
   .pin {
     animation: pin 2.4s ease-in-out infinite;
+  }
+  /* The camera goes off now and then. */
+  .flash {
+    animation: flash 4.5s ease-in-out infinite;
+  }
+  @keyframes flash {
+    0%, 86%, 100% { transform: none; filter: none; }
+    88% { transform: scale(1.25) rotate(-8deg); filter: brightness(2.2) drop-shadow(0 0 10px #fff); }
+    92% { transform: scale(1.05) rotate(3deg); filter: none; }
   }
   @keyframes pin {
     0%, 60%, 100% { transform: translateY(0); }

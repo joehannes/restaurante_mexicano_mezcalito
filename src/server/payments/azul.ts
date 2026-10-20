@@ -11,6 +11,7 @@
  * merchant credentials before going live; it is the one thing that cannot be
  * tested without them.
  */
+import type { PaymentCredentials } from '../../domain/adminInput';
 
 export interface AzulConfig {
   merchantId: string;
@@ -102,8 +103,9 @@ export async function azulResult(config: AzulConfig, params: URLSearchParams): P
   };
 }
 
-export function azulConfig(env: Env): AzulConfig | undefined {
-  if (!env.AZUL_MERCHANT_ID || !env.AZUL_AUTH_KEY) return undefined;
+/** From the Worker's secrets when they are set, else from what the owner typed in the admin. */
+export function azulConfig(env: Env, stored?: NonNullable<PaymentCredentials['azul']>): AzulConfig | undefined {
+  if (!env.AZUL_MERCHANT_ID || !env.AZUL_AUTH_KEY) return stored && { ...stored };
   return {
     merchantId: env.AZUL_MERCHANT_ID,
     merchantName: env.AZUL_MERCHANT_NAME ?? 'Mezcalito Bar and Grill',

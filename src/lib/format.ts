@@ -42,3 +42,10 @@ export function formatClock(time: ClockTime, locale: Locale): string {
 
 /** "+18099591646" → "+1 809-959-1646"; other numbers are left as stored. */
 export const formatPhone = (e164: string) => e164.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, '+1 $1-$2-$3');
+
+/** "Fri, Oct 31" or "Oct 31 – Nov 2" for YYYY-MM-DD dates, in the guest's language. */
+export function formatDateRange(from: string, to: string, locale: Locale): string {
+  const format = new Intl.DateTimeFormat(GROUPING[locale], { weekday: from === to ? 'short' : undefined, day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const a = new Date(`${from}T12:00:00Z`);
+  return from === to ? format.format(a) : format.formatRange(a, new Date(`${to}T12:00:00Z`));
+}

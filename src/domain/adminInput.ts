@@ -17,6 +17,8 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]{1,39}$/;
 /** A staff upload in R2 (/media/…) or one of the site's own photos (/img/…). */
 const MEDIA = /^\/(media|img)\/[\w./-]{1,120}$/;
+/** A video: an R2 upload or one of the site's own clips (/video/…). */
+const VIDEO = /^\/(media|video)\/[\w./-]{1,120}\.mp4$/;
 /** Palette names a flyer may use; they map to the --c-* custom properties. */
 export const PALETTE = ['ink', 'cream', 'gold', 'hibiscus', 'jungle', 'sunset', 'lagoon', 'mezcal'] as const;
 
@@ -65,6 +67,8 @@ export interface ItemPatch {
   photo?: string | null;
   soldOut?: boolean;
   hidden?: boolean;
+  /** The extras groups offered with the dish (sides, add-ons), in order. */
+  groups?: string[];
 }
 
 /** A partial update to a dish; only the fields present are checked and kept. */
@@ -101,6 +105,206 @@ export function parseItemPatch(body: unknown): Parsed<ItemPatch> {
   }
   if (has('soldOut')) typeof b.soldOut === 'boolean' ? (out.soldOut = b.soldOut) : errors.push('soldOut');
   if (has('hidden')) typeof b.hidden === 'boolean' ? (out.hidden = b.hidden) : errors.push('hidden');
+  if (has('groups')) {
+    const ok = Array.isArray(b.groups) && b.groups.length <= 10 && b.groups.every((g) => typeof g === 'string' && SLUG.test(g));
+    ok ? (out.groups = [...new Set(b.groups as string[])]) : errors.push('groups');
+  }
+  return errors.length ? { ok: false, errors } : { ok: true, value: out };
+}
+
+// ── Categories, variants and extras ───────────────────────────────────────
+
+export interface CategoryInput {
+  name: Localized;
+  hidden: boolean;
+}
+
+export function parseCategory(body: unknown): Parsed<CategoryInput> {
+  if (!isObject(body)) return { ok: false, errors: ['body'] };
+  const name = parseLocalized(body.name, 60);
+  return name ? { ok: true, value: { name, hidden: body.hidden === true } } : { ok: false, errors: ['name'] };
+}
+
+export interface PricedChoice {
+  /** Kept for an existing choice; a new one gets an id from its name. */
+  id?: string;
+  label: Localized;
+  price: number;
+}
+
+/** A dish's sizes or a group's options, replaced as a whole list. */
+export function parseChoices(value: unknown, max = 20): Parsed<PricedChoice[]> {
+  if (!Array.isArray(value) || value.length > max) return { ok: false, errors: ['list'] };
+  const out: PricedChoice[] = [];
+  for (const v of value) {
+    if (!isObject(v)) return { ok: false, errors: ['list'] };
+    const label = parseLocalized(v.label, 60);
+    if (!label || !isInt(v.price, 0, 10_000_000)) return { ok: false, errors: ['list'] };
+    const id = typeof v.id === 'string' && /^[a-z0-9][a-z0-9-]{0,39}$/.test(v.id) ? v.id : undefined;
+    out.push({ ...(id ? { id } : {}), label, price: v.price });
+  }
+  return { ok: true, value: out };
+}
+
+export interface GroupInput {
+  label: Localized;
+  min: number;
+  max: number;
+  options: PricedChoice[];
+}
+
+export function parseGroup(body: unknown): Parsed<GroupInput> {
+  if (!isObject(body)) return { ok: false, errors: ['body'] };
+  const errors: string[] = [];
+  const label = parseLocalized(body.label, 60);
+  if (!label) errors.push('label');
+  const min = isInt(body.min, 0, 10) ? body.min : (errors.push('min'), 0);
+  const max = isInt(body.max, 1, 20) && body.max >= min ? body.max : (errors.push('max'), 1);
+  const options = parseChoices(body.options, 30);
+  if (!options.ok) errors.push('options');
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, value: { label: label!, min, max, options: options.ok ? options.value : [] } };
+}
+
+// ── Polaroid wall ─────────────────────────────────────────────────────────
+
+export interface GalleryInput {
+  kind: 'photo' | 'video';
+  src: string;
+  poster: string | null;
+  caption: Localized;
+  tilt: number;
+  onHome: boolean;
+  published: boolean;
+}
+
+export function parseGallery(body: unknown): Parsed<GalleryInput> {
+  if (!isObject(body)) return { ok: false, errors: ['body'] };
+  const errors: string[] = [];
+  const kind = body.kind === 'video' ? 'video' : 'photo';
+  const src = typeof body.src === 'string' && (kind === 'video' ? VIDEO : MEDIA).test(body.src) ? body.src : (errors.push('src'), '');
+  const poster = body.poster === null || body.poster === undefined || body.poster === '' ? null : typeof body.poster === 'string' && MEDIA.test(body.poster) ? body.poster : (errors.push('poster'), null);
+  const caption = parseLocalized(body.caption, 60);
+  if (!caption) errors.push('caption');
+  const tilt = isNum(body.tilt, -12, 12) ? Math.round(body.tilt * 10) / 10 : (errors.push('tilt'), 0);
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, value: { kind, src, poster, caption: caption!, tilt, onHome: body.onHome !== false, published: body.published !== false } };
+}
+
+// ── Marketing events ──────────────────────────────────────────────────────
+
+export const EVENT_CTAS = ['order', 'book', 'whatsapp', 'link', 'none'] as const;
+
+export interface EventInput {
+  slug: string;
+  title: Localized;
+  kicker: Localized | null;
+  body: Localized | null;
+  startsOn: string;
+  endsOn: string;
+  startTime: string | null;
+  endTime: string | null;
+  price: number | null;
+  image: string | null;
+  video: string | null;
+  cta: (typeof EVENT_CTAS)[number];
+  ctaUrl: string | null;
+  ctaLabel: Localized | null;
+  highlights: Localized[];
+  color: (typeof PALETTE)[number];
+  published: boolean;
+  priority: number;
+}
+
+const optionalLocalized = (v: unknown, max: number) => (isObject(v) && text(v.en, max) ? parseLocalized(v, max) ?? null : null);
+
+export function parseEvent(body: unknown): Parsed<EventInput> {
+  if (!isObject(body)) return { ok: false, errors: ['body'] };
+  const b = body;
+  const errors: string[] = [];
+  const slug = text(b.slug, 40);
+  if (!SLUG.test(slug)) errors.push('slug');
+  const title = parseLocalized(b.title, 80);
+  if (!title) errors.push('title');
+  if (!isDate(b.startsOn)) errors.push('startsOn');
+  if (!isDate(b.endsOn) || (isDate(b.startsOn) && b.endsOn < b.startsOn)) errors.push('endsOn');
+  const clock = (v: unknown, key: string) => (v === null || v === undefined || v === '' ? null : typeof v === 'string' && CLOCK.test(v) ? v : (errors.push(key), null));
+  const startTime = clock(b.startTime, 'startTime');
+  const endTime = clock(b.endTime, 'endTime');
+  const price = b.price === null || b.price === undefined || b.price === '' ? null : isInt(b.price, 0, 10_000_000) ? b.price : (errors.push('price'), null);
+  const image = b.image === null || b.image === undefined || b.image === '' ? null : typeof b.image === 'string' && MEDIA.test(b.image) ? b.image : (errors.push('image'), null);
+  const video = b.video === null || b.video === undefined || b.video === '' ? null : typeof b.video === 'string' && VIDEO.test(b.video) ? b.video : (errors.push('video'), null);
+  const cta = EVENT_CTAS.includes(b.cta as never) ? (b.cta as EventInput['cta']) : (errors.push('cta'), 'none' as const);
+  const ctaUrl = b.ctaUrl ? (typeof b.ctaUrl === 'string' && /^https:\/\/\S{4,300}$/.test(b.ctaUrl) ? b.ctaUrl : (errors.push('ctaUrl'), null)) : null;
+  if (cta === 'link' && !ctaUrl) errors.push('ctaUrl');
+  const highlights = Array.isArray(b.highlights) && b.highlights.length <= 8 ? b.highlights.map((h) => parseLocalized(h, 120)) : [undefined];
+  if (!highlights.every(Boolean)) errors.push('highlights');
+  const color = PALETTE.includes(b.color as never) && b.color !== 'cream' ? (b.color as EventInput['color']) : (errors.push('color'), 'hibiscus' as const);
+  const priority = b.priority === undefined ? 0 : isInt(b.priority, 0, 100) ? b.priority : (errors.push('priority'), 0);
+  if (errors.length) return { ok: false, errors: [...new Set(errors)] };
+  return {
+    ok: true,
+    value: {
+      slug,
+      title: title!,
+      kicker: optionalLocalized(b.kicker, 80),
+      body: optionalLocalized(b.body, 2000),
+      startsOn: b.startsOn as string,
+      endsOn: b.endsOn as string,
+      startTime,
+      endTime,
+      price,
+      image,
+      video,
+      cta,
+      ctaUrl,
+      ctaLabel: optionalLocalized(b.ctaLabel, 40),
+      highlights: highlights as Localized[],
+      color,
+      published: b.published === true,
+      priority,
+    },
+  };
+}
+
+// ── Payment credentials (private, never in `settings`) ────────────────────
+
+export interface PaymentCredentials {
+  azul?: { merchantId: string; merchantName: string; merchantType: string; authKey: string; mode: 'test' | 'live' };
+  paypal?: { clientId: string; secret: string; mode: 'test' | 'live' };
+}
+
+/**
+ * Credentials typed in the admin. A secret left blank keeps the stored one,
+ * so the form never needs to show it; `clear` removes a provider.
+ */
+export function parseCredentials(body: unknown, stored: PaymentCredentials): Parsed<PaymentCredentials> {
+  if (!isObject(body)) return { ok: false, errors: ['body'] };
+  const out: PaymentCredentials = { ...stored };
+  const errors: string[] = [];
+  const mode = (v: unknown) => (v === 'live' ? 'live' : 'test') as 'test' | 'live';
+  if (isObject(body.azul)) {
+    const a = body.azul;
+    if (a.clear === true) delete out.azul;
+    else {
+      const merchantId = text(a.merchantId, 40);
+      const authKey = text(a.authKey, 200) || stored.azul?.authKey || '';
+      if (!/^[\w-]{3,40}$/.test(merchantId)) errors.push('azul.merchantId');
+      if (!authKey) errors.push('azul.authKey');
+      out.azul = { merchantId, merchantName: text(a.merchantName, 60) || 'Mezcalito Bar and Grill', merchantType: text(a.merchantType, 40) || 'Restaurant', authKey, mode: mode(a.mode) };
+    }
+  }
+  if (isObject(body.paypal)) {
+    const p = body.paypal;
+    if (p.clear === true) delete out.paypal;
+    else {
+      const clientId = text(p.clientId, 200);
+      const secret = text(p.secret, 200) || stored.paypal?.secret || '';
+      if (!/^[\w-]{10,200}$/.test(clientId)) errors.push('paypal.clientId');
+      if (!secret) errors.push('paypal.secret');
+      out.paypal = { clientId, secret, mode: mode(p.mode) };
+    }
+  }
   return errors.length ? { ok: false, errors } : { ok: true, value: out };
 }
 
@@ -383,6 +587,26 @@ const parseReviews = (v: unknown) =>
 const parseRadio = (v: unknown) =>
   isObject(v) && (v.bed === null || (typeof v.bed === 'string' && /^\/media\/radio\/[\w-]{1,80}\.mp3$/.test(v.bed))) ? { bed: v.bed as string | null } : undefined;
 
+export interface PaymentSettings {
+  cash: boolean;
+  cardOnDelivery: boolean;
+  azul: boolean;
+  paypal: boolean;
+  /** Shown at checkout, e.g. "We take US dollars and euros in cash". */
+  note: Localized | null;
+}
+
+/** Which ways to pay guests are offered, and a note shown at checkout. */
+const parsePayments = (v: unknown): PaymentSettings | undefined => {
+  if (!isObject(v)) return undefined;
+  const note = (isObject(v.note) && text(v.note.en, 300) ? parseLocalized(v.note, 300) : null) ?? null;
+  const flag = (k: string) => v[k] !== false;
+  const out = { cash: flag('cash'), cardOnDelivery: flag('cardOnDelivery'), azul: flag('azul'), paypal: flag('paypal'), note };
+  // Guests must always have some way to pay: with everything off, cash stays on.
+  if (!out.cash && !out.cardOnDelivery && !out.azul && !out.paypal) out.cash = true;
+  return out;
+};
+
 const SETTINGS = {
   hours: parseHours,
   closures: parseClosures,
@@ -395,6 +619,7 @@ const SETTINGS = {
   reservations: parseRules,
   radio: parseRadio,
   whatsapp: parseWhatsAppSettings,
+  payments: parsePayments,
 } satisfies Record<string, (v: unknown) => unknown>;
 
 export type SettingKey = keyof typeof SETTINGS;

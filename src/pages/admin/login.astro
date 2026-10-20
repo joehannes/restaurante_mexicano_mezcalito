@@ -1,0 +1,68 @@
+---
+/**
+ * Password sign-in to the admin. A plain form, so it works without
+ * JavaScript; the middleware lets this page through without a session.
+ */
+import '../../styles/global.css';
+import { env } from 'cloudflare:workers';
+import { adminDictionary, adminLocale } from '../../i18n/admin';
+import { checkPassword, lockedOut, recordFailure, sessionCookie } from '../../server/password';
+
+const locale = adminLocale(Astro.request);
+const dict = adminDictionary(locale);
+const nextParam = Astro.url.searchParams.get('next') ?? '/admin';
+// Only back into the admin, never off-site.
+const next = /^\/admin(\/[\w/-]*)?$/.test(nextParam) && !nextParam.startsWith('/admin/log') ? nextParam : '/admin';
+const ip = Astro.clientAddress ?? 'unknown';
+let problem: string | undefined;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData().catch(() => undefined);
+  const password = String(form?.get('password') ?? '');
+  if (await lockedOut(env, ip)) problem = dict['login.locked'];
+  else if (password && (await checkPassword(env.DB, password))) {
+    return new Response(null, {
+      status: 303,
+      headers: { location: next, 'set-cookie': await sessionCookie(env.DB, Astro.url.protocol === 'https:'), 'cache-control': 'no-store' },
+    });
+  } else {
+    await recordFailure(env, ip);
+    problem = dict['login.wrong'];
+  }
+  Astro.response.status = 401;
+}
+---
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <title>{dict['login.title']} · Mezcalito admin</title>
+    <meta name="theme-color" content="#141210" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+  </head>
+  <body class="grid min-h-dvh place-items-center bg-ink px-4 antialiased">
+    <form method="post" class="w-full max-w-sm rounded-2xl border-4 border-ink bg-cream p-6 shadow-[8px_8px_0_var(--c-hibiscus)]">
+      <p class="flex items-center gap-2 font-display text-2xl tracking-[0.12em] uppercase">
+        <img src="/img/mark-96.webp" alt="" width="46" height="48" class="h-12 w-auto" />
+        Mezcalito
+      </p>
+      <h1 class="mt-4 font-display text-4xl uppercase">{dict['login.title']}</h1>
+      <label class="mt-5 block">
+        <span class="mb-1 block text-sm font-semibold">{dict['login.password']}</span>
+        <input
+          type="password"
+          name="password"
+          required
+          autofocus
+          autocomplete="current-password"
+          class="w-full rounded-lg border-2 border-ink/15 bg-white px-3 py-2"
+        />
+      </label>
+      {problem && <p role="alert" class="mt-3 font-semibold text-hibiscus">{problem}</p>}
+      <button type="submit" class="mt-5 w-full rounded-full bg-ink px-4 py-3 font-bold text-cream">{dict['login.submit']}</button>
+      <p class="mt-4 text-center text-xs"><a href="/" class="underline">{dict['nav.site']}</a></p>
+    </form>
+  </body>
+</html>

@@ -8,6 +8,7 @@
  * back with its id → capture it here, and only a COMPLETED capture for the
  * right order and amount counts as paid.
  */
+import type { PaymentCredentials } from '../../domain/adminInput';
 
 export interface PayPalConfig {
   clientId: string;
@@ -79,7 +80,8 @@ export async function paypalCapture(config: PayPalConfig, paypalOrderId: string)
   return { paid: true, code: capture.custom_id ?? unit?.reference_id ?? '', usd: capture.amount.value, reference: capture.id };
 }
 
-export function paypalConfig(env: Env): PayPalConfig | undefined {
-  if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_SECRET) return undefined;
+/** From the Worker's secrets when they are set, else from what the owner typed in the admin. */
+export function paypalConfig(env: Env, stored?: NonNullable<PaymentCredentials['paypal']>): PayPalConfig | undefined {
+  if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_SECRET) return stored && { ...stored };
   return { clientId: env.PAYPAL_CLIENT_ID, secret: env.PAYPAL_SECRET, mode: env.PAYPAL_MODE === 'live' ? 'live' : 'test' };
 }

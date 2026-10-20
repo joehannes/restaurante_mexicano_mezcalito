@@ -5,6 +5,7 @@
  * flower, and the sound system.
  */
 import Site from '../../layouts/Site.astro';
+import Poster from '../../components/Poster.astro';
 import { t } from '../../i18n/ui';
 import { href, notFound, pageContext } from '../../server/page';
 
@@ -29,6 +30,7 @@ const { locale } = ctx;
     <p class="reveal text-xl font-semibold">{t(locale, 'story.p1')}</p>
     <p class="reveal">{t(locale, 'story.p2')}</p>
     <p class="reveal">{t(locale, 'story.p3')}</p>
+    <Poster name="story-crossroads" alt={t(locale, 'art.story')} height={744} tilt={-1} sticker="hibiscus" class="pt-4" />
   </article>
 
   <section class="mx-auto mt-14 max-w-4xl px-4" aria-labelledby="watch">

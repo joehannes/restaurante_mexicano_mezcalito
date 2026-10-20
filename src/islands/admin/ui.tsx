@@ -98,8 +98,20 @@ export function LocalizedFields({
   );
 }
 
-/** A photo from R2: preview, replace, remove. */
-export function PhotoField({ value, onChange, dict, folder = 'menu' }: { value: string | null; onChange: (path: string | null) => void; dict: AdminDictionary; folder?: string }) {
+/** A photo (or, with `video`, a short mp4) from R2: preview, replace, remove. */
+export function PhotoField({
+  value,
+  onChange,
+  dict,
+  folder = 'menu',
+  video = false,
+}: {
+  value: string | null;
+  onChange: (path: string | null) => void;
+  dict: AdminDictionary;
+  folder?: string;
+  video?: boolean;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const upload = async (file: File | undefined) => {
@@ -115,10 +127,21 @@ export function PhotoField({ value, onChange, dict, folder = 'menu' }: { value: 
   };
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {value ? <img src={value} alt="" className="size-20 rounded-lg object-cover" /> : <span className="size-20 rounded-lg bg-ink/10" />}
+      {value && video ? (
+        <video src={value} muted loop autoPlay playsInline className="size-20 rounded-lg object-cover" />
+      ) : value ? (
+        <img src={value} alt="" className="size-20 rounded-lg object-cover" />
+      ) : (
+        <span className="size-20 rounded-lg bg-ink/10" />
+      )}
       <label className={`${ghost} cursor-pointer`}>
-        {busy ? dict['common.saving'] : dict['common.upload']}
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" onChange={(e) => upload(e.target.files?.[0])} />
+        {busy ? dict['common.saving'] : dict[video ? 'common.uploadVideo' : 'common.upload']}
+        <input
+          type="file"
+          accept={video ? 'video/mp4' : 'image/jpeg,image/png,image/webp,image/avif'}
+          className="sr-only"
+          onChange={(e) => upload(e.target.files?.[0])}
+        />
       </label>
       {value && (
         <button type="button" className={ghost} onClick={() => onChange(null)}>

@@ -13,6 +13,7 @@ export interface SiteSettings {
   reviewsSummary?: { rating: number; count: number; source: string; asOf: string };
   pricing: import('../domain/types').PricingSettings;
   deliveryZones: import('../domain/types').DeliveryZone[];
+  payments?: import('../domain/adminInput').PaymentSettings;
 }
 
 export interface SpecialRecord extends Special {

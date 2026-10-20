@@ -3,6 +3,7 @@ import { env } from 'cloudflare:workers';
 import Site from '../../layouts/Site.astro';
 import Checkout from '../../islands/Checkout';
 import { orderSlots } from '../../domain/schedule';
+import { localized } from '../../domain/types';
 import { dictionary, t, when } from '../../i18n/ui';
 import { loadMenu } from '../../server/menu';
 import { href, notFound, pageContext } from '../../server/page';
@@ -33,6 +34,8 @@ Astro.response.headers.set('cache-control', 'no-store');
     uberEatsUrl={site.social.ubereats}
     menuHref={href(locale, '/menu')}
     orderHref={href(locale, '/o')}
-    onlineProviders={onlineProviders(env)}
+    onlineProviders={await onlineProviders(env)}
+    offline={{ cash: site.payments?.cash !== false, card_on_delivery: site.payments?.cardOnDelivery !== false }}
+    payNote={site.payments?.note ? localized(site.payments.note, locale) : undefined}
   />
 </Site>

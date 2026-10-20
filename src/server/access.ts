@@ -1,17 +1,20 @@
 /**
- * Staff sign-in. Cloudflare Access sits in front of /admin and /api/admin and
- * does the actual login (one-time PIN by email, or Google); every request it
+ * Staff sign-in. Either the shared admin password (see password.ts), or
+ * Cloudflare Access in front of /admin and /api/admin doing the actual login (one-time PIN by email, or Google); every request it
  * lets through carries a signed token naming the person. Here the token is
  * checked again — never trust a header just because Access should have set
  * it — and the email is looked up for a role.
  */
 import { isRole, type Role } from '../domain/roles';
 import { verifyJwt, type Jwk } from './jwt';
+import { passwordStaff } from './password';
 
 export interface Staff {
   email: string;
   name: string | null;
   role: Role;
+  /** Signed in with the shared admin password rather than Access. */
+  via?: 'password';
 }
 
 let certs: { domain: string; keys: Jwk[]; fetchedAt: number } | undefined;
@@ -54,12 +57,13 @@ async function signedInEmail(request: Request, env: Env, dev: boolean): Promise<
 
 export async function staffFor(request: Request, env: Env, dev = false): Promise<Staff | undefined> {
   const email = (await signedInEmail(request, env, dev))?.toLowerCase();
-  if (!email) return undefined;
+  // No Access identity: the admin password's session cookie, if there is one.
+  if (!email) return passwordStaff(request, env.DB);
   const owners = (env.OWNER_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
   const row = await env.DB.prepare('SELECT email, name, role FROM staff WHERE email = ?').bind(email).first<Staff>();
   if (owners.includes(email)) return { email, name: row?.name ?? null, role: 'owner' };
   if (row && isRole(row.role)) return row;
   // Local development: the dev email is an owner until the staff table says otherwise.
   if (dev && email === env.DEV_STAFF_EMAIL?.toLowerCase()) return { email, name: 'Dev', role: 'owner' };
-  return undefined;
+  return passwordStaff(request, env.DB);
 }

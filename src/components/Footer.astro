@@ -53,6 +53,8 @@ const sameEveryDay = site.hours.every((d) => JSON.stringify(d) === JSON.stringif
       <p class="mt-4 font-bold">{t(locale, 'footer.more')}</p>
       <p class="mt-2 flex flex-wrap gap-3">
         <a class="underline" href={href(locale, '/parties')}>{t(locale, 'parties.title')}</a>
+        <a class="underline" href={href(locale, '/gallery')}>{t(locale, 'nav.gallery')}</a>
+        <a class="underline" href={href(locale, '/event')}>{t(locale, 'nav.event')}</a>
         <a class="underline" href={href(locale, '/story')}>{t(locale, 'nav.story')}</a>
         <a class="underline" href={href(locale, '/find-us')}>{t(locale, 'nav.findUs')}</a>
       </p>

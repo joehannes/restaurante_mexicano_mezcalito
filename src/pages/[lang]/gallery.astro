@@ -1,0 +1,39 @@
+---
+/** The whole polaroid wall: every photo and clip staff have pinned up. */
+import { env } from 'cloudflare:workers';
+import Site from '../../layouts/Site.astro';
+import PolaroidWall from '../../components/PolaroidWall.astro';
+import { t } from '../../i18n/ui';
+import { loadGallery } from '../../server/gallery';
+import { href, notFound, pageContext } from '../../server/page';
+
+const ctx = await pageContext(Astro.params.lang);
+if (!ctx) return notFound();
+const { locale, site } = ctx;
+const items = await loadGallery(env.DB);
+---
+<Site ctx={ctx} path="/gallery" title={`${t(locale, 'gallery.title')} — Mezcalito, Bávaro`} description={t(locale, 'gallery.sub')}>
+  <section class="halftone relative overflow-hidden bg-mezcal pb-10 text-cream">
+    <p class="pointer-events-none absolute top-10 left-1/2 w-max -translate-x-1/2 font-display text-[10rem] leading-none text-cream/5 uppercase select-none md:text-[18rem]" aria-hidden="true">One love</p>
+    {[
+      ['speaker', 'top-6 right-3 w-16 md:right-12 md:w-24', 7, '0s'],
+      ['hibiscus', 'top-[40%] left-1 hidden w-16 md:block', -12, '-2s'],
+      ['taco', 'bottom-16 right-2 w-16 md:w-24', 10, '-3.5s'],
+      ['lime', 'bottom-[35%] right-1 hidden w-14 lg:block', -8, '-1s'],
+    ].map(([name, place, tilt, delay]) => (
+      <img src={`/img/stickers/${name}.webp`} alt="" width="128" height="128" class={`bob pointer-events-none absolute z-10 h-auto drop-shadow-[2px_3px_0_rgb(20_18_16/0.4)] ${place}`} style={`--tilt:${tilt}deg; --d:${delay}; --beat:6s`} />
+    ))}
+    <div class="relative mx-auto max-w-6xl px-4 pt-10">
+      <h1 class="font-display text-5xl text-gold uppercase md:text-7xl">{t(locale, 'gallery.title')} <span class="inline-block rotate-12" aria-hidden="true">📸</span></h1>
+      <p class="mt-3 max-w-2xl text-lg">{t(locale, 'gallery.sub')}</p>
+      <p class="mt-1 text-sm text-cream/75">{t(locale, 'gallery.hint')}</p>
+      <PolaroidWall items={items} locale={locale} size="page" />
+      <div class="mt-4 flex flex-wrap items-center gap-4">
+        <a href={href(locale, '/reserve')} class="jiggle shine rounded-full bg-gold px-6 py-3 font-bold text-ink">{t(locale, 'gallery.cta')} →</a>
+        {site.social.instagram && (
+          <a href={site.social.instagram} class="font-semibold underline" rel="me">{t(locale, 'gallery.tag')}</a>
+        )}
+      </div>
+    </div>
+  </section>
+</Site>

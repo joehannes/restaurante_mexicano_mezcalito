@@ -11,7 +11,61 @@ interface Member {
   role: Role;
 }
 
-export default function StaffAdmin({ dict, me }: { dict: AdminDictionary; me: string }) {
+/** The shared admin password: anyone who knows it signs in as an owner. */
+function PasswordCard({ dict, needsCurrent }: { dict: AdminDictionary; needsCurrent: boolean }) {
+  const [isDefault, setIsDefault] = useState(false);
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [again, setAgain] = useState('');
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'mismatch' | 'short' | 'wrong' | 'error'>('idle');
+  useEffect(() => {
+    api<{ isDefault: boolean }>('/password').then((r) => r.ok && setIsDefault(r.data.isDefault));
+  }, []);
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (next.length < 8) return setStatus('short');
+    if (next !== again) return setStatus('mismatch');
+    setStatus('saving');
+    const result = await api('/password', { method: 'PUT', body: { current, next } });
+    if (result.ok) {
+      setStatus('saved');
+      setIsDefault(false);
+      setCurrent('');
+      setNext('');
+      setAgain('');
+    } else setStatus(result.fields.includes('current') ? 'wrong' : 'error');
+  };
+  const message = { mismatch: 'password.mismatch', short: 'password.short', wrong: 'password.wrong', error: 'common.error' } as const;
+  return (
+    <form id="password" onSubmit={save} className="mt-8 grid gap-3 rounded-xl bg-white p-4">
+      <h2 className="font-display text-2xl uppercase">{dict['password.title']}</h2>
+      <p className="text-sm text-ink/70">{dict['password.intro']}</p>
+      {isDefault && <p className="rounded-lg bg-sunset/15 p-3 text-sm font-semibold">{dict['password.isDefault']}</p>}
+      <div className="grid gap-3 md:grid-cols-3">
+        {needsCurrent && (
+          <Field label={dict['password.current']}>
+            <input type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} className={input} required />
+          </Field>
+        )}
+        <Field label={dict['password.new']}>
+          <input type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} className={input} required minLength={8} />
+        </Field>
+        <Field label={dict['password.again']}>
+          <input type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} className={input} required />
+        </Field>
+      </div>
+      <p className="flex flex-wrap items-center gap-3">
+        <button type="submit" className={button} disabled={status === 'saving'}>
+          {status === 'saving' ? dict['common.saving'] : dict['password.change']}
+        </button>
+        {status === 'saved' && <span className="font-semibold text-jungle">✓ {dict['common.saved']}</span>}
+        {status in message && <span className="font-semibold text-hibiscus">{dict[message[status as keyof typeof message]]}</span>}
+      </p>
+    </form>
+  );
+}
+
+export default function StaffAdmin({ dict, me, viaPassword }: { dict: AdminDictionary; me: string; viaPassword: boolean }) {
   const [staff, setStaff] = useState<Member[]>();
   const [owners, setOwners] = useState<string[]>([]);
   const [email, setEmail] = useState('');
@@ -105,6 +159,8 @@ export default function StaffAdmin({ dict, me }: { dict: AdminDictionary; me: st
         </button>
         {problem && <p className="font-semibold text-hibiscus md:col-span-4">{dict['common.error']}</p>}
       </form>
+
+      <PasswordCard dict={dict} needsCurrent={viaPassword} />
     </div>
   );
 }

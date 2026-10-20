@@ -7,16 +7,34 @@
 import { waitUntil } from 'cloudflare:workers';
 import { notifyOrderPlaced } from '../notify';
 import { tellKitchen } from '../orders';
+import type { PaymentCredentials, PaymentSettings } from '../../domain/adminInput';
+import { getPrivate } from '../password';
 import { azulConfig, azulForm, azulPageUrl, azulResult } from './azul';
 import { usdCharge } from '../../lib/format';
 import { paypalCapture, paypalConfig, paypalStart } from './paypal';
 
 export type Provider = 'azul' | 'paypal';
 
-export const onlineProviders = (env: Env): Provider[] => [
-  ...(azulConfig(env) ? (['azul'] as const) : []),
-  ...(paypalConfig(env) ? (['paypal'] as const) : []),
-];
+/** Each provider's settings: the Worker's secrets win over what was typed in the admin. */
+export async function providerConfigs(env: Env) {
+  const stored = (await getPrivate<PaymentCredentials>(env.DB, 'payment_credentials')) ?? {};
+  return { azul: azulConfig(env, stored.azul), paypal: paypalConfig(env, stored.paypal) };
+}
+
+/** The ways to pay guests are offered (Admin → Settings → Payments). Each is on until switched off. */
+export async function paymentChoices(env: Env) {
+  const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'payments'").first<{ value: string }>();
+  return (row ? JSON.parse(row.value) : {}) as Partial<PaymentSettings>;
+}
+
+/** Online providers that are set up and switched on. */
+export async function onlineProviders(env: Env): Promise<Provider[]> {
+  const [configs, choices] = await Promise.all([providerConfigs(env), paymentChoices(env)]);
+  return [
+    ...(configs.azul && choices.azul !== false ? (['azul'] as const) : []),
+    ...(configs.paypal && choices.paypal !== false ? (['paypal'] as const) : []),
+  ];
+}
 
 interface PayableOrder {
   id: number;
@@ -50,7 +68,7 @@ export async function startPayment(env: Env, origin: string, code: string, key: 
   const back = `${code}/${key}`;
 
   if (provider === 'azul') {
-    const config = azulConfig(env);
+    const config = (await providerConfigs(env)).azul;
     if (!config) return Response.redirect(orderPage(origin, order), 303);
     const fields = await azulForm(
       config,
@@ -73,7 +91,7 @@ export async function startPayment(env: Env, origin: string, code: string, key: 
     );
   }
 
-  const config = paypalConfig(env);
+  const config = (await providerConfigs(env)).paypal;
   if (!config) return Response.redirect(orderPage(origin, order), 303);
   const rate = await env.DB.prepare("SELECT value FROM settings WHERE key = 'pricing'").first<{ value: string }>();
   const usd = usdCharge(order.total, (JSON.parse(rate!.value) as { usdRate: number }).usdRate);
@@ -109,7 +127,7 @@ async function markFailed(env: Env, order: PayableOrder) {
 
 export async function azulReturn(env: Env, origin: string, outcome: string, code: string, key: string, params: URLSearchParams): Promise<Response> {
   const order = await payable(env, code, key);
-  const config = azulConfig(env);
+  const config = (await providerConfigs(env)).azul;
   if (!order || !config) return new Response('Not found', { status: 404 });
   if (outcome === 'approved') {
     const result = await azulResult(config, params);
@@ -125,7 +143,7 @@ export async function azulReturn(env: Env, origin: string, outcome: string, code
 
 export async function paypalReturn(env: Env, origin: string, outcome: string, code: string, key: string, params: URLSearchParams): Promise<Response> {
   const order = await payable(env, code, key);
-  const config = paypalConfig(env);
+  const config = (await providerConfigs(env)).paypal;
   if (!order || !config) return new Response('Not found', { status: 404 });
   const token = params.get('token') ?? '';
   // Only the PayPal order we created for this order may pay for it.

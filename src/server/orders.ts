@@ -10,13 +10,14 @@ import { waitUntil } from 'cloudflare:workers';
 import { loadSite } from './content';
 import { loadMenu } from './menu';
 import { notifyOrderPlaced } from './notify';
-import { onlineProviders } from './payments';
+import { onlineProviders, paymentChoices } from './payments';
 
 export type PlaceOrderError =
   | 'closed'
   | 'slot_unavailable'
   | 'outside_delivery_zone'
   | 'online_unavailable'
+  | 'payment_unavailable'
   | 'pricing'
   | 'storage';
 
@@ -34,7 +35,13 @@ export async function placeOrder(env: Env, input: OrderInput, now = new Date()):
   const tz = env.TIMEZONE;
 
   const online = input.payment === 'online';
-  if (online && !onlineProviders(env).length) return { ok: false, error: 'online_unavailable' };
+  // Cash and card on delivery can be switched off under Admin → Settings → Payments.
+  const [choices, providers] = await Promise.all([paymentChoices(env), onlineProviders(env)]);
+  const cashOff = choices.cash === false && (choices.cardOnDelivery !== false || providers.length > 0);
+  if ((input.payment === 'cash' && cashOff) || (input.payment === 'card_on_delivery' && choices.cardOnDelivery === false)) {
+    return { ok: false, error: 'payment_unavailable' };
+  }
+  if (online && !providers.length) return { ok: false, error: 'online_unavailable' };
 
   if (input.when === 'asap') {
     if (!openStatus(now, site.hours, site.closures, tz).open) return { ok: false, error: 'closed' };

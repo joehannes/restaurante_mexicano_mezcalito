@@ -5,6 +5,7 @@
  * own flyers. Every night is also published to search engines as an Event.
  */
 import Site from '../../layouts/Site.astro';
+import Poster from '../../components/Poster.astro';
 import FlyerCard from '../../components/FlyerCard.astro';
 import JsonLd from '../../components/JsonLd.astro';
 import { activeSpecials, addDays, localNow, occurrences, parseClock, specialsOn } from '../../domain/schedule';
@@ -86,7 +87,10 @@ let index = 0;
   </section>
 
   <section class="mx-auto max-w-6xl px-4 pt-12" aria-labelledby="week">
-    <h2 id="week" class="font-display text-4xl uppercase">{t(locale, 'tonight.week')}</h2>
+    <div class="grid items-center gap-8 md:grid-cols-[1fr_22rem]">
+      <h2 id="week" class="font-display text-4xl uppercase md:text-6xl">{t(locale, 'tonight.week')}</h2>
+      <Poster name="karaoke" alt={t(locale, 'art.karaoke')} tilt={2.5} sticker="mic" class="mx-auto w-72 md:w-full" />
+    </div>
     {daily.length > 0 && (
       <p class="mt-3 flex flex-wrap gap-2">
         <span class="font-bold">{t(locale, 'tonight.everyDay')}:</span>

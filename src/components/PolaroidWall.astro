@@ -1,0 +1,234 @@
+---
+/**
+ * The polaroid wall: guests, the crowd, the selector and the drinks, pinned
+ * up at angles with tape or a pin and a caption in marker. Photos "develop"
+ * as they scroll in; a clip plays silently while it is on screen. Tap or
+ * hover one and it straightens up and comes forward. Staff run the wall
+ * under Admin → Polaroid wall.
+ */
+import '@fontsource/permanent-marker/latin-400.css';
+import type { Locale } from '../domain/types';
+import { localized } from '../domain/types';
+import type { GalleryItem } from '../server/gallery';
+
+interface Props {
+  items: GalleryItem[];
+  locale: Locale;
+  /** The home page's strip, or the whole wall on its own page. */
+  size?: 'home' | 'page';
+}
+const { items, locale, size = 'home' } = Astro.props;
+const tapes = ['var(--c-gold)', 'var(--c-lagoon)', 'var(--c-hibiscus)', 'var(--c-jungle)', 'var(--c-sunset)'];
+---
+<ul class:list={['wall', size === 'page' && 'wall-page']} role="list">
+  {items.map((item, i) => {
+    const caption = localized(item.caption, locale);
+    const pinned = i % 3 === 2;
+    return (
+      <li
+        class="polaroid reveal reveal-pop"
+        style={`--tilt:${item.tilt}deg; --d:${(i % 4) * 90}ms; --tape:${tapes[i % tapes.length]}; --nudge:${[0, 18, -6, 26, 4, -14][i % 6]}px`}
+        tabindex="0"
+      >
+        <figure>
+          {pinned ? <span class="pin" aria-hidden="true"></span> : <span class="tape" aria-hidden="true"></span>}
+          <div class="shot">
+            {item.kind === 'video' ? (
+              <>
+                <video
+                  data-loop={item.src}
+                  poster={item.poster ?? undefined}
+                  muted
+                  loop
+                  playsinline
+                  preload="none"
+                  width="400"
+                  height="400"
+                  aria-label={caption}
+                ></video>
+                <span class="rec" aria-hidden="true"><span></span>REC</span>
+              </>
+            ) : (
+              <img src={item.src} alt={caption} width="520" height="520" loading="lazy" decoding="async" />
+            )}
+          </div>
+          <figcaption lang={locale}>{caption}</figcaption>
+        </figure>
+      </li>
+    );
+  })}
+</ul>
+
+<style>
+  .wall {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem 1rem;
+    padding: 1.5rem 0.25rem 2.5rem;
+  }
+  @media (min-width: 768px) {
+    .wall {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2.5rem 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .wall {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 2.5rem 1.5rem;
+    }
+    /* Scattered, not lined up: every card sits a little higher or lower. */
+    .polaroid {
+      margin-top: var(--nudge);
+    }
+  }
+  @media (min-width: 1024px) {
+    .wall-page {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 3rem 2.5rem;
+    }
+  }
+
+  .polaroid {
+    position: relative;
+    transform: rotate(var(--tilt));
+    outline: none;
+  }
+  .polaroid figure {
+    position: relative;
+    margin: 0;
+    padding: 0.6rem 0.6rem 0;
+    background: #fffdf8;
+    border-radius: 3px;
+    box-shadow:
+      0 1px 0 rgb(0 0 0 / 0.08),
+      0 10px 22px -8px rgb(20 18 16 / 0.45),
+      0 2px 4px rgb(20 18 16 / 0.18);
+    transition:
+      transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 300ms ease;
+  }
+  /* Odd ones lean back on the beat, so the wall never looks stamped out. */
+  .polaroid:nth-child(even) figure {
+    padding: 0.55rem 0.55rem 0;
+  }
+  .shot {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #2a2622;
+  }
+  .shot > img,
+  .shot > video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  figcaption {
+    padding: 0.6rem 0.25rem 0.85rem;
+    min-height: 3.2rem;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    font-family: 'Permanent Marker', 'Comic Sans MS', cursive;
+    font-size: clamp(0.85rem, 2.6vw, 1.05rem);
+    line-height: 1.15;
+    color: #1f2a6b;
+    transform: rotate(calc(var(--tilt) * -0.4));
+  }
+
+  /* Washi tape across the top, a different colour each time. */
+  .tape {
+    position: absolute;
+    z-index: 2;
+    top: -0.7rem;
+    left: 50%;
+    width: 42%;
+    height: 1.45rem;
+    translate: -50% 0;
+    rotate: calc(var(--tilt) * -1.5 + 3deg);
+    background: color-mix(in srgb, var(--tape) 72%, transparent);
+    mask: linear-gradient(90deg, transparent 0 2px, #000 2px calc(100% - 2px), transparent calc(100% - 2px)),
+      repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 4px);
+    mask-composite: add;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  }
+  /* Or a push pin. */
+  .pin {
+    position: absolute;
+    z-index: 2;
+    top: -0.45rem;
+    left: 50%;
+    width: 1.1rem;
+    height: 1.1rem;
+    translate: -50% 0;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 30%, #fff8 0 18%, transparent 20%), var(--tape);
+    box-shadow:
+      0 3px 0 -1px rgb(0 0 0 / 0.35),
+      inset 0 -2px 0 rgb(0 0 0 / 0.25);
+  }
+
+  .rec {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: rgb(20 18 16 / 0.65);
+    color: #fbf3e4;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+  .rec > span {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--c-hibiscus);
+    animation: pulse-dot 1.2s steps(2, jump-none) infinite;
+  }
+
+  /* Pick one up: it straightens, comes forward and casts a longer shadow. */
+  .polaroid:hover,
+  .polaroid:focus-visible {
+    z-index: 5;
+  }
+  .polaroid:hover figure,
+  .polaroid:focus-visible figure {
+    transform: rotate(calc(var(--tilt) * -1)) scale(1.08) translateY(-6px);
+    box-shadow:
+      0 1px 0 rgb(0 0 0 / 0.08),
+      0 24px 40px -12px rgb(20 18 16 / 0.55);
+  }
+  .polaroid:focus-visible figure {
+    outline: 3px solid var(--c-gold);
+    outline-offset: 3px;
+  }
+
+  /*
+   * Developing: a photo comes in washed out and warm, then the colour rises,
+   * like an instant print in the hand. Only with the page's script (html.js),
+   * so without it every photo is simply there.
+   */
+  :global(html.js) .polaroid .shot > img,
+  :global(html.js) .polaroid .shot > video {
+    filter: brightness(1.55) contrast(0.55) sepia(0.55) saturate(0.4) blur(1.5px);
+    transition: filter 1800ms ease-out;
+    transition-delay: calc(var(--d, 0ms) + 450ms);
+  }
+  :global(html.js) .polaroid.is-in .shot > img,
+  :global(html.js) .polaroid.is-in .shot > video {
+    filter: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(html.js) .polaroid .shot > img,
+    :global(html.js) .polaroid .shot > video {
+      filter: none;
+    }
+  }
+</style>

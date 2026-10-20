@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { parseItemPatch } from '../../../../../domain/adminInput';
 import { body, contentChanged, guard, json } from '../../../../../server/admin';
-import { updateItem } from '../../../../../server/staffData';
+import { deleteItem, updateItem } from '../../../../../server/staffData';
 
 /** The kitchen may only flip sold out; everything else needs the menu permission. */
 export const PATCH: APIRoute = async ({ locals, params, request }) => {
@@ -13,6 +13,14 @@ export const PATCH: APIRoute = async ({ locals, params, request }) => {
   const parsed = parseItemPatch(input);
   if (!parsed.ok) return json({ error: 'invalid', fields: parsed.errors }, 400);
   if (!(await updateItem(env.DB, String(params.id), parsed.value))) return json({ error: 'not_found' }, 404);
+  await contentChanged(env);
+  return json({ ok: true });
+};
+
+export const DELETE: APIRoute = async ({ locals, params }) => {
+  const staff = guard(locals, 'menu');
+  if (staff instanceof Response) return staff;
+  if (!(await deleteItem(env.DB, String(params.id)))) return json({ error: 'not_found' }, 404);
   await contentChanged(env);
   return json({ ok: true });
 };

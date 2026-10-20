@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { parseItemPatch } from '../../../../../domain/adminInput';
 import { body, contentChanged, guard, json } from '../../../../../server/admin';
-import { createItem } from '../../../../../server/staffData';
+import { createItem, orderItems } from '../../../../../server/staffData';
 
 const slug = (text: string) =>
   text
@@ -26,4 +26,16 @@ export const POST: APIRoute = async ({ locals, request }) => {
   await createItem(env.DB, id, { ...parsed.value, categoryId, name, price });
   await contentChanged(env);
   return json({ id }, 201);
+};
+
+/** The order of dishes: `ids` first to last. */
+export const PUT: APIRoute = async ({ locals, request }) => {
+  const staff = guard(locals, 'menu');
+  if (staff instanceof Response) return staff;
+  const input = await body<{ ids?: unknown }>(request);
+  const ids = input?.ids;
+  if (!Array.isArray(ids) || ids.length > 500 || !ids.every((i) => typeof i === 'string')) return json({ error: 'invalid' }, 400);
+  await orderItems(env.DB, ids as string[]);
+  await contentChanged(env);
+  return json({ ok: true });
 };

@@ -1,0 +1,84 @@
+---
+/**
+ * The featured event on the home page: a torn-off ticket stub in the event's
+ * colour, with how long until it starts (or that it is on right now).
+ */
+import { localized } from '../domain/types';
+import { t } from '../i18n/ui';
+import { formatClock, formatDateRange } from '../lib/format';
+import { eventTiming, type EventRecord } from '../server/events';
+import { href, type PageContext } from '../server/page';
+
+interface Props {
+  event: EventRecord;
+  ctx: PageContext;
+}
+const { event, ctx } = Astro.props;
+const { locale } = ctx;
+const timing = eventTiming(event, ctx.today);
+const badge =
+  timing.state === 'live'
+    ? t(locale, timing.lastDay ? 'event.lastDay' : 'event.live')
+    : timing.state === 'soon'
+      ? timing.days === 1
+        ? t(locale, 'event.tomorrow')
+        : t(locale, 'event.countdown', { days: timing.days })
+      : '';
+const ink = event.color === 'gold' || event.color === 'lagoon' ? 'text-ink' : 'text-cream';
+const bg = `var(--c-${event.color})`;
+---
+<section class="px-4 pt-8" aria-labelledby="event-banner">
+  <div class="reveal reveal-pop mx-auto max-w-6xl drop-shadow-[6px_6px_0_var(--c-ink)]" style="--tilt:-0.6deg">
+  <a
+    href={href(locale, `/event/${event.slug}`)}
+    class:list={['ticket group flex flex-wrap items-center gap-x-6 gap-y-3 p-5 pl-8 md:flex-nowrap md:p-6 md:pl-10', ink]}
+    style={`--bg:${bg}`}
+  >
+    {event.image && (
+      <img src={event.image} alt="" width="160" height="160" loading="lazy" class="hidden size-28 shrink-0 rotate-[-4deg] rounded-xl border-4 border-current object-cover shadow-[4px_4px_0_var(--c-ink)] sm:block md:size-32" />
+    )}
+    <div class="min-w-0 flex-1">
+      <p class="flex flex-wrap items-center gap-2 text-sm font-bold tracking-wide uppercase">
+        {badge && (
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-ink px-2.5 py-0.5 text-cream">
+            {timing.state === 'live' && <span class="eq text-gold" aria-hidden="true"><span></span><span></span><span></span></span>}
+            {badge}
+          </span>
+        )}
+        {event.kicker && <span>{localized(event.kicker, locale)}</span>}
+      </p>
+      <h2 id="event-banner" class="mt-1 font-display text-3xl leading-none uppercase md:text-5xl">{localized(event.title, locale)}</h2>
+      <p class="mt-2 font-semibold">
+        {formatDateRange(event.startsOn, event.endsOn, locale)}
+        {event.startTime && ` · ${formatClock(event.startTime, locale)}${event.endTime ? `–${formatClock(event.endTime, locale)}` : ''}`}
+      </p>
+    </div>
+    <span class="stub shrink-0 font-display text-2xl uppercase">
+      <span class="inline-block transition-transform group-hover:translate-x-1">{t(locale, 'event.details')} →</span>
+    </span>
+  </a>
+  </div>
+</section>
+
+<style>
+  /* A ticket: notched at both ends, perforated before the stub. */
+  .ticket {
+    position: relative;
+    background: var(--bg);
+    border: 4px solid var(--c-ink);
+    border-radius: 1rem;
+    mask:
+      radial-gradient(circle at 0 50%, transparent 0.9rem, #000 0.95rem) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 50%, transparent 0.9rem, #000 0.95rem) right / 51% 100% no-repeat;
+  }
+  .stub {
+    padding-left: 1.5rem;
+    border-left: 3px dashed currentColor;
+  }
+  @media (max-width: 767px) {
+    .stub {
+      padding-left: 0;
+      border-left: 0;
+    }
+  }
+</style>

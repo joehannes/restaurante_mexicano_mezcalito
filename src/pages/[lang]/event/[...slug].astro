@@ -1,0 +1,179 @@
+---
+/**
+ * A marketing event's own page. `/event` is whichever event is featured now
+ * (on today, else the next one coming up); `/event/<slug>` is one event,
+ * kept online after it ends so shared links still land somewhere.
+ */
+import '@fontsource/permanent-marker/latin-400.css';
+import { env } from 'cloudflare:workers';
+import Site from '../../../layouts/Site.astro';
+import JsonLd from '../../../components/JsonLd.astro';
+import { localized } from '../../../domain/types';
+import { t } from '../../../i18n/ui';
+import { formatClock, formatDateRange, formatPrice } from '../../../lib/format';
+import { currentEvent, eventAction, eventTiming, loadEvent, loadEvents } from '../../../server/events';
+import { staffFor } from '../../../server/access';
+import { href, notFound, pageContext } from '../../../server/page';
+
+const ctx = await pageContext(Astro.params.lang, Astro.request);
+if (!ctx) return notFound();
+const { locale, site } = ctx;
+const slug = Astro.params.slug;
+if (slug !== undefined && !/^[a-z0-9][a-z0-9-]{1,39}$/.test(slug)) return notFound();
+
+const upcoming = await loadEvents(env.DB, { today: ctx.today });
+const event = slug ? await loadEvent(env.DB, slug) : currentEvent(upcoming, ctx.today, 60);
+if (slug && !event) return notFound();
+// A draft is only for signed-in staff to preview.
+if (event && !event.published) {
+  if (!(await staffFor(Astro.request, env, import.meta.env.DEV))) return notFound();
+  Astro.response.headers.set('cache-control', 'no-store');
+}
+const others = upcoming.filter((e) => e.slug !== event?.slug).slice(0, 3);
+const timing = event && eventTiming(event, ctx.today);
+const action = event && eventAction(event, locale, site.contact.whatsapp);
+const paragraphs = event?.body ? localized(event.body, locale).split(/\n{2,}/) : [];
+const when = event && `${formatDateRange(event.startsOn, event.endsOn, locale)}${event.startTime ? ` · ${formatClock(event.startTime, locale)}${event.endTime ? `–${formatClock(event.endTime, locale)}` : ''}` : ''}`;
+const ink = event && (event.color === 'gold' || event.color === 'lagoon') ? 'text-ink' : 'text-cream';
+const title = event ? localized(event.title, locale) : t(locale, 'nav.event');
+const description = event ? (event.kicker ? localized(event.kicker, locale) : paragraphs[0] ?? title) : t(locale, 'event.none');
+const jsonLd = event && {
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name: title,
+  description,
+  startDate: `${event.startsOn}${event.startTime ? `T${event.startTime}:00-04:00` : ''}`,
+  endDate: `${event.endsOn}${event.endTime && event.endTime !== '24:00' ? `T${event.endTime}:00-04:00` : ''}`,
+  eventStatus: 'https://schema.org/EventScheduled',
+  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  ...(event.image ? { image: new URL(event.image, Astro.url.origin).href } : {}),
+  location: {
+    '@type': 'Restaurant',
+    name: 'Mezcalito Bar & Grill',
+    address: { '@type': 'PostalAddress', streetAddress: site.address.street, addressLocality: site.address.locality, addressRegion: site.address.region, addressCountry: site.address.country },
+  },
+  ...(event.price !== null ? { offers: { '@type': 'Offer', price: (event.price / 100).toFixed(2), priceCurrency: 'DOP', url: Astro.url.href } } : {}),
+};
+---
+<Site ctx={ctx} path={slug ? `/event/${slug}` : '/event'} title={`${title} — Mezcalito, Bávaro`} description={description}>
+  {jsonLd && <JsonLd slot="head" data={jsonLd} />}
+  {timing?.state === 'over' && <meta slot="head" name="robots" content="noindex" />}
+  {event && timing && when ? (
+    <>
+      <section class:list={['halftone relative overflow-hidden border-b-4 border-ink', ink]} style={`background:var(--c-${event.color})`}>
+        <span class="confetti" aria-hidden="true">{['✦', '★', '♪', '✦', '♫', '★', '✦'].map((c, i) => <span style={`--i:${i}`}>{c}</span>)}</span>
+        <div class="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 md:grid-cols-[1.2fr_1fr] md:py-16">
+          <div>
+            <p class="flex flex-wrap items-center gap-2 text-sm font-bold tracking-wide uppercase">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1 text-cream">
+                {timing.state === 'live' && <span class="eq text-gold" aria-hidden="true"><span></span><span></span><span></span></span>}
+                {timing.state === 'live'
+                  ? t(locale, timing.lastDay ? 'event.lastDay' : 'event.live')
+                  : timing.state === 'soon'
+                    ? timing.days === 1 ? t(locale, 'event.tomorrow') : t(locale, 'event.countdown', { days: timing.days })
+                    : t(locale, 'event.over')}
+              </span>
+              {event.kicker && <span>{localized(event.kicker, locale)}</span>}
+            </p>
+            <h1 class="drop mt-3 font-display text-6xl leading-[0.9] uppercase md:text-8xl">{title}</h1>
+            <p class="mt-4 text-xl font-bold">📅 {when}</p>
+            {event.price !== null && (
+              <p class="sticker mt-4 inline-block bg-gold text-ink" style="--tilt:-4deg">{t(locale, 'event.from', { price: formatPrice(event.price, locale) })}</p>
+            )}
+            {action && timing.state !== 'over' && (
+              <p class="mt-6">
+                <a href={action.href} class="jiggle shine inline-block rounded-full border-4 border-ink bg-cream px-6 py-3 text-lg font-bold text-ink shadow-[4px_4px_0_var(--c-ink)]">
+                  {event.ctaLabel ? localized(event.ctaLabel, locale) : t(locale, action.key)} →
+                </a>
+              </p>
+            )}
+          </div>
+          {(event.image || event.video) && (
+            <figure class="poster mx-auto w-full max-w-sm bg-[#fffdf8] p-3 pb-12 text-ink shadow-[0_20px_40px_-12px_rgb(0_0_0/0.55)]">
+              {event.video ? (
+                <video data-loop={event.video} poster={event.image ?? undefined} muted loop playsinline preload="none" class="aspect-square w-full object-cover" aria-label={title}></video>
+              ) : (
+                <img src={event.image!} alt={title} class="aspect-square w-full object-cover" width="520" height="520" />
+              )}
+              <figcaption class="marker mt-3 text-center text-xl">{title}</figcaption>
+            </figure>
+          )}
+        </div>
+      </section>
+
+      <div class="mx-auto grid max-w-6xl gap-10 px-4 pt-12 md:grid-cols-[1.4fr_1fr]">
+        <div class="space-y-4 text-lg leading-relaxed">
+          {paragraphs.map((p) => <p>{p}</p>)}
+        </div>
+        {event.highlights.length > 0 && (
+          <aside>
+            <h2 class="font-display text-3xl uppercase">{t(locale, 'event.highlights')}</h2>
+            <ul class="mt-4 flex flex-wrap gap-3">
+              {event.highlights.map((h, i) => (
+                <li class:list={['sticker reveal reveal-pop text-base', ['bg-gold', 'bg-lagoon', 'bg-hibiscus text-cream', 'bg-jungle text-cream'][i % 4]]} style={`--tilt:${[-3, 2, -1.5, 3.5][i % 4]}deg; --d:${i * 80}ms`}>
+                  {localized(h, locale)}
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+      </div>
+    </>
+  ) : (
+    <div class="mx-auto max-w-3xl px-4 pt-12">
+      <h1 class="font-display text-5xl uppercase">{t(locale, 'nav.event')}</h1>
+      <p class="mt-4 text-lg">{t(locale, 'event.none')}</p>
+      <p class="mt-6"><a href={href(locale, '/tonight')} class="rounded-full bg-ink px-5 py-2 font-bold text-cream">{t(locale, 'home.lineup')} →</a></p>
+    </div>
+  )}
+
+  {others.length > 0 && (
+    <section class="mx-auto max-w-6xl px-4 pt-14" aria-labelledby="next-events">
+      <h2 id="next-events" class="font-display text-3xl uppercase">{t(locale, 'event.next')}</h2>
+      <ul class="mt-4 grid gap-4 md:grid-cols-3">
+        {others.map((e) => (
+          <li>
+            <a href={href(locale, `/event/${e.slug}`)} class:list={['block rounded-2xl border-4 border-ink p-4 shadow-[4px_4px_0_var(--c-ink)] transition-transform hover:-rotate-1', e.color === 'gold' || e.color === 'lagoon' ? 'text-ink' : 'text-cream']} style={`background:var(--c-${e.color})`}>
+              <span class="block text-sm font-bold">{formatDateRange(e.startsOn, e.endsOn, locale)}</span>
+              <span class="block font-display text-2xl uppercase">{localized(e.title, locale)}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</Site>
+
+<style>
+  .poster {
+    rotate: 3deg;
+    transition: rotate 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .poster:hover {
+    rotate: 0deg;
+  }
+  .marker {
+    font-family: 'Permanent Marker', 'Comic Sans MS', cursive;
+    color: #1f2a6b;
+  }
+  /* The headline drops in like the hero's. */
+  .drop {
+    animation: drop 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes drop {
+    from { opacity: 0; transform: translateY(-30px) rotate(-3deg); }
+  }
+  /* Bits of confetti and music notes drifting down the hero. */
+  .confetti > span {
+    position: absolute;
+    top: -2rem;
+    left: calc(6% + var(--i) * 14%);
+    font-size: 1.4rem;
+    opacity: 0.55;
+    animation: fall calc(7s + var(--i) * 0.9s) linear infinite;
+    animation-delay: calc(var(--i) * -1.7s);
+  }
+  @keyframes fall {
+    to { transform: translateY(32rem) rotate(320deg); }
+  }
+</style>
