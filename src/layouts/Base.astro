@@ -54,10 +54,68 @@ const skin = Object.entries(tokens)
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {skin && <style is:inline set:html={`:root{${skin}}`} />}
+    <script is:inline>document.documentElement.classList.add('js')</script>
     <slot name="head" />
   </head>
   <body class="min-h-dvh antialiased">
     <slot />
+    <script is:inline>
+      // The page's motion, in one small script: reveal things as they scroll in,
+      // play the silent video loops only while they are on screen (never for
+      // reduced motion or Data Saver), and the hero logo's airhorn.
+      (() => {
+        const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const thrifty = navigator.connection?.saveData;
+        const seen = new IntersectionObserver(
+          (entries) => entries.forEach((e) => e.isIntersecting && (e.target.classList.add('is-in'), seen.unobserve(e.target))),
+          { rootMargin: '0px 0px -8% 0px' },
+        );
+        document.querySelectorAll('.reveal').forEach((el) => seen.observe(el));
+
+        const loops = new IntersectionObserver((entries) =>
+          entries.forEach(({ target: v, isIntersecting }) => {
+            if (isIntersecting) {
+              if (!v.src) v.src = v.dataset.loop;
+              v.play().catch(() => {});
+            } else v.pause();
+          }),
+        );
+        // Without motion a loop becomes an ordinary video to play by hand; a
+        // purely decorative one just keeps its poster.
+        document.querySelectorAll('video[data-loop]').forEach((v) => {
+          if (!still && !thrifty) loops.observe(v);
+          else if (!v.hasAttribute('data-decor')) (v.controls = true), (v.src = v.dataset.loop);
+        });
+
+        // A dancehall airhorn, synthesised: three blasts, the last one long.
+        let audio;
+        document.querySelectorAll('[data-airhorn]').forEach((el) =>
+          el.addEventListener('click', () => {
+            audio ??= new AudioContext();
+            const now = audio.currentTime;
+            [0, 0.22, 0.44].forEach((at, i) => {
+              const len = i === 2 ? 0.9 : 0.16;
+              const gain = audio.createGain();
+              gain.gain.setValueAtTime(0, now + at);
+              gain.gain.linearRampToValueAtTime(0.18, now + at + 0.02);
+              gain.gain.setValueAtTime(0.18, now + at + len - 0.05);
+              gain.gain.linearRampToValueAtTime(0, now + at + len);
+              gain.connect(audio.destination);
+              [440, 554, 660].forEach((f) => {
+                const osc = audio.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(f * 0.94, now + at);
+                osc.frequency.linearRampToValueAtTime(f, now + at + 0.06);
+                osc.connect(gain);
+                osc.start(now + at);
+                osc.stop(now + at + len);
+              });
+            });
+            el.animate?.([{ transform: 'rotate(0) scale(1)' }, { transform: 'rotate(-8deg) scale(1.08)' }, { transform: 'rotate(6deg) scale(1.04)' }, { transform: 'none' }], { duration: 700 });
+          }),
+        );
+      })();
+    </script>
     {import.meta.env.PROD && (
       <script is:inline define:vars={{ locale }}>
         // Installable, and the menu readable offline (see public/sw.js).

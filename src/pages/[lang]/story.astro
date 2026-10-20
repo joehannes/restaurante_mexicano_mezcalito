@@ -19,23 +19,26 @@ const { locale } = ctx;
     <div class="relative mx-auto flex max-w-4xl items-center gap-6 px-4 py-16 md:py-24">
       <div class="flex-1">
         <p class="font-display text-gold uppercase">{t(locale, 'brand.slogan')}</p>
-        <h1 class="mt-2 font-display text-5xl leading-[0.95] uppercase md:text-7xl">{t(locale, 'story.lead')}</h1>
+        <h1 class="reveal mt-2 font-display text-5xl leading-[0.95] uppercase md:text-7xl">{t(locale, 'story.lead')}</h1>
       </div>
-      <img src="/img/logo-320.webp" alt="Mezcalito Bar & Grill" width="200" height="232" class="hidden h-auto w-44 shrink-0 md:block" />
+      <img src="/img/logo-320.webp" alt="Mezcalito Bar & Grill" width="200" height="232" class="bob hidden h-auto w-44 shrink-0 md:block" style="--tilt:3deg; --beat:6s" />
     </div>
   </section>
 
   <article class="mx-auto max-w-3xl space-y-6 px-4 pt-12 text-lg leading-relaxed">
-    <p class="text-xl font-semibold">{t(locale, 'story.p1')}</p>
-    <p>{t(locale, 'story.p2')}</p>
-    <p>{t(locale, 'story.p3')}</p>
+    <p class="reveal text-xl font-semibold">{t(locale, 'story.p1')}</p>
+    <p class="reveal">{t(locale, 'story.p2')}</p>
+    <p class="reveal">{t(locale, 'story.p3')}</p>
   </article>
 
   <section class="mx-auto mt-14 max-w-4xl px-4" aria-labelledby="watch">
-    <h2 id="watch" class="font-display text-3xl uppercase">{t(locale, 'story.watch')}</h2>
+    <h2 id="watch" class="reveal flex items-center gap-3 font-display text-3xl uppercase">
+      {t(locale, 'story.watch')}
+      <span class="eq text-hibiscus" aria-hidden="true"><span></span><span></span><span></span></span>
+    </h2>
     <!-- Mezcalito's own promo, re-encoded small; nothing downloads until it is played. -->
     <video
-      class="mt-4 aspect-[854/456] w-full rounded-2xl border-4 border-ink bg-ink shadow-[6px_6px_0_var(--c-ink)]"
+      class="reveal mt-4 aspect-[854/456] w-full rounded-2xl border-4 border-ink bg-ink shadow-[6px_6px_0_var(--c-hibiscus)]"
       src="/video/mezcalito.mp4"
       poster="/video/mezcalito-poster.webp"
       preload="none"
@@ -48,18 +51,20 @@ const { locale } = ctx;
   </section>
 
   <section class="mx-auto mt-14 grid max-w-5xl gap-6 px-4 md:grid-cols-2">
-    <div class="halftone rounded-2xl bg-hibiscus p-6 text-cream shadow-[6px_6px_0_var(--c-ink)]">
+    <div class="reveal reveal-pop halftone rounded-2xl bg-hibiscus p-6 text-cream shadow-[6px_6px_0_var(--c-ink)]" style="--tilt:-1.5deg">
+      <span class="bob float-right text-5xl" style="--beat:5s" aria-hidden="true">🌺</span>
       <h2 class="font-display text-3xl uppercase">{t(locale, 'story.bridgeTitle')}</h2>
       <p class="mt-3">{t(locale, 'story.bridge')}</p>
     </div>
-    <div class="halftone rounded-2xl bg-jungle p-6 text-gold shadow-[6px_6px_0_var(--c-ink)]">
+    <div class="reveal reveal-pop halftone rounded-2xl bg-jungle p-6 text-gold shadow-[6px_6px_0_var(--c-ink)]" style="--tilt:1.5deg; --d:120ms">
+      <span class="bob float-right text-5xl" style="--beat:4.2s; --d:-1s" aria-hidden="true">🔊</span>
       <h2 class="font-display text-3xl uppercase">{t(locale, 'story.soundTitle')}</h2>
       <p class="mt-3 text-cream">{t(locale, 'story.sound')}</p>
     </div>
   </section>
 
   <p class="mx-auto mt-12 flex max-w-5xl flex-wrap gap-3 px-4">
-    <a href={href(locale, '/menu')} class="cone rounded-full bg-hibiscus px-6 py-3 font-bold text-cream">{t(locale, 'home.fullMenu')}</a>
+    <a href={href(locale, '/menu')} class="cone shine rounded-full bg-hibiscus px-6 py-3 font-bold text-cream">{t(locale, 'home.fullMenu')}</a>
     <a href={href(locale, '/reserve')} class="rounded-full bg-ink px-6 py-3 font-bold text-cream">{t(locale, 'nav.bookTable')}</a>
   </p>
 </Site>
@@ -68,6 +73,11 @@ const { locale } = ctx;
   /* The logo's split: the Jamaican half and the Mexican half, on a diagonal. */
   .split {
     background: linear-gradient(115deg, var(--c-jungle) 0 38%, var(--c-gold) 38% 42%, var(--c-ink) 42% 58%, var(--c-sunset) 58% 62%, var(--c-hibiscus) 62%);
+    inset: 0 -15%;
     opacity: 0.3;
+    animation: slide 14s ease-in-out infinite alternate;
+  }
+  @keyframes slide {
+    to { transform: translateX(-12%); }
   }
 </style>

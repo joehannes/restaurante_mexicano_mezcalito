@@ -2,7 +2,7 @@
  * The floating "View order" pill: count and food subtotal, one tap to
  * checkout. It bounces (transform only) whenever something lands in it.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { priceCart } from '../domain/pricing';
 import type { Locale, MenuItem, PricingSettings } from '../domain/types';
 import { fill, type Dictionary } from '../i18n/fill';
@@ -39,10 +39,18 @@ export default function CartPill({ locale, dict, menu, pricing, checkoutHref }: 
       <a
         key={bump}
         href={checkoutHref}
-        className="pointer-events-auto flex w-full max-w-md items-center justify-between rounded-full bg-ink px-6 py-4 font-bold text-cream shadow-[4px_4px_0_var(--c-hibiscus)] motion-safe:animate-[bounce-in_380ms_ease-out]"
+        className="pointer-events-auto relative flex w-full max-w-md items-center justify-between rounded-full bg-ink px-6 py-4 font-bold text-cream shadow-[4px_4px_0_var(--c-hibiscus)] motion-safe:animate-[bounce-in_380ms_ease-out]"
       >
         <span>{fill(dict, 'cart.view', { count })}</span>
         <span>{formatPrice(subtotal, locale)}</span>
+        {bump > 0 && (
+          // A little papel-picado burst each time something lands in the order.
+          <span className="burst" aria-hidden="true">
+            {Array.from({ length: 10 }, (_, i) => (
+              <i key={i} style={{ '--a': `${i * 36}deg`, '--c': `var(--c-${['gold', 'hibiscus', 'lagoon', 'jungle', 'sunset'][i % 5]})` } as CSSProperties} />
+            ))}
+          </span>
+        )}
       </a>
     </div>
   );

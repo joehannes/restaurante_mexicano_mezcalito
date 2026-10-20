@@ -36,12 +36,31 @@ let index = 0;
 ---
 <Site ctx={ctx} path="/tonight" title={`${t(locale, 'tonight.title')} — Mezcalito, Bávaro`} description={t(locale, 'tonight.intro')}>
   <JsonLd slot="head" data={events} />
-  <div class="mx-auto max-w-6xl px-4 pt-8">
-    <h1 class="font-display text-5xl uppercase md:text-6xl">{t(locale, 'tonight.title')}</h1>
-    <p class="mt-2 max-w-2xl">{t(locale, 'tonight.intro')}</p>
-  </div>
+  <header class="relative overflow-hidden bg-ink text-cream">
+    <!-- The terrace on a busy night: Mezcalito's own footage, silent, behind the title. -->
+    <video
+      data-loop="/video/fiesta.mp4"
+      data-decor
+      poster="/video/fiesta-poster.webp"
+      muted
+      loop
+      playsinline
+      preload="none"
+      class="absolute inset-0 size-full object-cover opacity-60"
+      aria-hidden="true"
+    ></video>
+    <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-ink/10" aria-hidden="true"></div>
+    <div class="papel-picado flutter absolute inset-x-0 top-0 h-6" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-6xl px-4 pt-20 pb-10 md:pt-28">
+      <h1 class="flex flex-wrap items-center gap-3 font-display text-5xl text-gold uppercase drop-shadow-[3px_3px_0_var(--c-ink)] md:text-7xl">
+        {t(locale, 'tonight.title')}
+        <span class="eq text-hibiscus" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      </h1>
+      <p class="mt-3 max-w-2xl text-lg">{t(locale, 'tonight.intro')}</p>
+    </div>
+  </header>
 
-  <section class="mt-8 bg-ink py-10 text-cream" aria-labelledby="today">
+  <section class="bg-ink pt-4 pb-10 text-cream" aria-labelledby="today">
     <div class="mx-auto max-w-6xl px-4">
       <h2 id="today" class="font-display text-3xl text-gold uppercase">{t(locale, 'day.todayShort')} · {longDate(today, locale)}</h2>
       {todays.length === 0 && <p class="mt-4">{t(locale, 'tonight.quietDay')}</p>}
@@ -55,7 +74,7 @@ let index = 0;
             <h3 class="text-sm font-bold tracking-[0.18em] uppercase opacity-80">{t(locale, label as 'tonight.now')}</h3>
             <div class="mt-4 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
               {(group as typeof live).map((s) => (
-                <div class:list={[label === 'tonight.earlier' && 'opacity-60']}>
+                <div class:list={['reveal reveal-pop pt-3', label === 'tonight.earlier' && 'opacity-60']}>
                   <FlyerCard special={s} locale={locale} index={index++} live={label === 'tonight.now'} />
                 </div>
               ))}
@@ -81,10 +100,14 @@ let index = 0;
     <ol class="mt-6 space-y-10">
       {week.map(({ date, specials }) => (
         <li>
-          <h3 class="border-b-2 border-ink pb-1 font-display text-2xl uppercase">{longDate(date, locale)}</h3>
+          <h3 class="reveal border-b-2 border-ink pb-1 font-display text-2xl uppercase">{longDate(date, locale)}</h3>
           {specials.length ? (
             <div class="mt-5 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {specials.map((s) => <FlyerCard special={s} locale={locale} index={index++} />)}
+              {specials.map((s, i) => (
+                <div class="reveal reveal-pop pt-3" style={`--d:${(i % 3) * 100}ms`}>
+                  <FlyerCard special={s} locale={locale} index={index++} />
+                </div>
+              ))}
             </div>
           ) : (
             <p class="mt-3 text-ink/70">{t(locale, 'tonight.quietDay')}</p>

@@ -50,6 +50,14 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  /* Nothing waits to be revealed, and the ticker stands still. */
+  html.js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .marquee {
+    animation: none;
+  }
 }
 
 /* ── Texture ──────────────────────────────────────────────────────────── */
@@ -112,6 +120,166 @@ html {
 .cone:hover,
 .cone:focus-visible {
   animation-play-state: paused;
+}
+
+/*
+ * Scroll reveal. Only once the page's little script has run (html.js) do
+ * things start hidden, so without JavaScript everything is simply there.
+ * `--d` staggers siblings; `.reveal-pop` lands with a dancehall bounce.
+ */
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 600ms ease,
+    transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: var(--d, 0ms);
+}
+html.js .reveal-pop {
+  transform: translateY(24px) rotate(var(--tilt, 0deg)) scale(0.92);
+  transition-timing-function: ease, cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+html.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+html.js .reveal-pop.is-in {
+  transform: rotate(var(--tilt, 0deg));
+}
+
+/* A ticker band, the slogans going round like a sound-system banner. */
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee var(--speed, 38s) linear infinite;
+}
+.marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Equalizer bars: three or four spans that pump like a level meter. */
+@keyframes eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+.eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 0.9em;
+}
+.eq > span {
+  width: 3px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: eq 0.9s ease-in-out infinite;
+}
+.eq > span:nth-child(2) { animation-duration: 0.7s; animation-delay: -0.2s; }
+.eq > span:nth-child(3) { animation-duration: 1.1s; animation-delay: -0.5s; }
+.eq > span:nth-child(4) { animation-duration: 0.8s; animation-delay: -0.35s; }
+
+/* Stickers that bob in place, each on its own beat. */
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-10px) rotate(calc(var(--tilt, 0deg) + 4deg)); }
+}
+.bob {
+  animation: bob var(--beat, 5s) ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+/* A jiggle on hover, for things that want to be touched. */
+@keyframes jiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-6deg) scale(1.04); }
+  60% { transform: rotate(5deg) scale(1.04); }
+}
+.jiggle:hover,
+.jiggle:focus-visible {
+  animation: jiggle 420ms ease-in-out;
+}
+
+/* A shine that sweeps across a button now and then. */
+@keyframes shine {
+  0%, 70% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+.shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shine::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.45), transparent);
+  animation: shine 4.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Papel picado that moves in the breeze (the footer's bunting). */
+@keyframes flutter {
+  0%, 100% { transform: skewX(0) scaleY(1); }
+  50% { transform: skewX(-4deg) scaleY(0.94); }
+}
+.papel-picado.flutter {
+  transform-origin: top;
+  animation: flutter 3.6s ease-in-out infinite;
+}
+
+/* A heart that beats. */
+@keyframes beat {
+  0%, 60%, 100% { transform: scale(1); }
+  10%, 30% { transform: scale(1.25); }
+  20% { transform: scale(1.05); }
+}
+.beat {
+  display: inline-block;
+  animation: beat 1.6s ease-in-out infinite;
+}
+
+/* Masking tape holding a flyer to the wall. */
+.tape::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  z-index: 2;
+  width: 84px;
+  height: 22px;
+  translate: -50% 0;
+  rotate: var(--tape, -4deg);
+  background: color-mix(in srgb, var(--c-cream) 70%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+}
+
+/* Confetti that bursts out of the order pill when something lands in it. */
+@keyframes burst {
+  from { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1); }
+  to { opacity: 0; transform: rotate(var(--a)) translateY(-46px) scale(0.4); }
+}
+.burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+}
+.burst > i {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  margin: -6px 0 0 -4px;
+  border-radius: 2px;
+  background: var(--c);
+  animation: burst 650ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* The dish sheet slides up (transform only). */

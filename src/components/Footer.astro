@@ -17,11 +17,12 @@ const ranges = site.hours[0] ?? [];
 const sameEveryDay = site.hours.every((d) => JSON.stringify(d) === JSON.stringify(ranges));
 ---
 <footer class="mt-16 bg-ink pb-24 text-cream md:pb-10">
-  <div class="papel-picado h-6" aria-hidden="true"></div>
+  <div class="papel-picado flutter h-6" aria-hidden="true"></div>
   <div class="mx-auto grid max-w-6xl gap-8 px-4 pt-10 md:grid-cols-3">
     <div>
-      <img src="/img/logo-320.webp" alt="Mezcalito Bar & Grill" width="160" height="185" loading="lazy" class="h-auto w-40" />
+      <img src="/img/logo-320.webp" alt="Mezcalito Bar & Grill" width="160" height="185" loading="lazy" class="jiggle h-auto w-40" />
       <p class="mt-1 text-sm">{t(locale, 'brand.tagline')} · {t(locale, 'brand.slogan')}</p>
+      <p class="mt-2 text-sm font-semibold text-gold"><span class="beat text-hibiscus" aria-hidden="true">♥</span> {t(locale, 'footer.love')}</p>
       <address class="mt-4 text-sm not-italic leading-relaxed">
         {site.address.street}, {site.address.locality}<br />
         {site.address.region}, República Dominicana<br />
