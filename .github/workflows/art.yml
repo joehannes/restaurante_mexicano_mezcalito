@@ -1,0 +1,32 @@
+name: Generate art
+
+# Manual only: draws the illustrations in scripts/art/prompts.json with
+# Workers AI and uploads them as an artifact to pick from. Nothing is deployed.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Names to (re)generate, comma-separated; empty for all
+        required: false
+        default: ''
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/art/generate.mjs "$ONLY"
+        env:
+          ONLY: ${{ inputs.only }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: art
+          path: art-out/
+          if-no-files-found: warn
