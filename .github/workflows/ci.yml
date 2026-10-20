@@ -44,3 +44,5 @@ jobs:
         if: env.CLOUDFLARE_API_TOKEN != ''
       - run: npm run deploy
         if: env.CLOUDFLARE_API_TOKEN != ''
+        env:
+          WRANGLER_LOG: debug
