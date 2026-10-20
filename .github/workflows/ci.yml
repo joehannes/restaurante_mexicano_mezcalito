@@ -46,3 +46,4 @@ jobs:
         if: env.CLOUDFLARE_API_TOKEN != ''
         env:
           WRANGLER_LOG: debug
+          WRANGLER_LOG_SANITIZE: "false"
