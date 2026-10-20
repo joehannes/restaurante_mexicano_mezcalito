@@ -298,7 +298,7 @@ Sources:
 - Google Rich Results test for Restaurant, Menu and Event. Lighthouse SEO and a11y ≥ 95.
 
 ## Prerequisites and open items
-- **Cloudflare:** D1 (migrated and seeded), KV and R2 are created and wired into `wrangler.jsonc`, with R2 writes held inside the free tier (see docs/development.md → *Staying on the free plan*). Still needed: an API token as the GitHub Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, so CI deploys. **Domain:** it runs on its workers.dev address for now; links follow whatever address it is served on, and `SITE_URL` pins one once a domain points here.
+- **Cloudflare:** D1 (migrated and seeded), KV and R2 are created and wired into `wrangler.jsonc`, with R2 writes held inside the free tier (see docs/development.md → *Staying on the free plan*). CI deploys every push to `main`; the site is live at https://mezcalito-rd.johannes-neugschwentner.workers.dev. **Domain:** it runs on that workers.dev address for now; links follow whatever address it is served on, and `SITE_URL` pins one once a domain points here.
 - **Cloudflare Access** application for `/admin` and `/api/admin`, and the owner's email in `OWNER_EMAILS`.
 - **Payments:** an Azul merchant account (then check the signature field order against Azul's guide and run a sandbox payment) and/or a PayPal business app.
 - **Messages:** their WhatsApp (+1 809-212-0782) already works on every WhatsApp button. Automatic updates need the five templates approved by Meta: Admin → WhatsApp has them ready to copy in four languages, with the steps, the links and the email to use. Email needs a Resend account.

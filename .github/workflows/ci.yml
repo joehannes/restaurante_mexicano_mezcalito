@@ -42,8 +42,5 @@ jobs:
         if: env.CLOUDFLARE_API_TOKEN != ''
       - run: npx wrangler d1 migrations apply mezcalito --remote
         if: env.CLOUDFLARE_API_TOKEN != ''
-      - run: npm run deploy -- --durable-objects-code-update-mode immediate
+      - run: npm run deploy
         if: env.CLOUDFLARE_API_TOKEN != ''
-        env:
-          WRANGLER_LOG: debug
-          WRANGLER_LOG_SANITIZE: "false"

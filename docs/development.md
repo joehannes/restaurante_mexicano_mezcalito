@@ -151,14 +151,22 @@ D1 `mezcalito` (all migrations applied and seeded on 19 Oct 2026), KV
 `mezcalito-cache` and R2 `mezcalito-media`. **Never run `seed/seed.sql`
 against it again**: it replaces the content tables staff now edit.
 
-The site runs on its workers.dev address. Links in messages, the sitemap
+The site runs as the Worker `mezcalito-rd` at
+https://mezcalito-rd.johannes-neugschwentner.workers.dev (first deployed
+20 Oct 2026). Links in messages, the sitemap
 and search data use whatever address it is served on (remembered in KV for
 the reminder cron); set `SITE_URL` in `wrangler.jsonc` once a domain points
 here. The old site's `.html` pages redirect to their new homes.
 
 Secrets (the table above) are set with `wrangler secret put`, or in the
-Cloudflare dashboard under Workers → mezcalito → Settings → Variables and
-secrets, once the first deploy has created the Worker.
+Cloudflare dashboard under Workers → mezcalito-rd → Settings → Variables and
+secrets.
+
+The Worker is not called plain `mezcalito`: a first deploy that failed
+halfway left that name half-created on Cloudflare, and every upload to it
+answered "This Worker does not exist" (10007). The deploy token's Workers
+role needs **Admin** (all Workers) to create a Worker; **Editor** is
+enough to update one that exists.
 
 ### Staying on the free plan
 
