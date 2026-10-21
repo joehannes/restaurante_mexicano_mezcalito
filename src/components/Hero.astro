@@ -35,6 +35,21 @@ const happyHour = activeSpecials(ctx.now, ctx.specials, ctx.tz).find((s) => s.id
 const kicker = season ? localized(season.hero.kicker, locale) : t(locale, `hero.${part}.kicker` as const);
 const headline = season ? localized(season.hero.headline, locale) : t(locale, `hero.${part}.headline` as const);
 const body = season ? localized(season.hero.body, locale) : `${t(locale, 'brand.tagline')} · ${t(locale, 'brand.slogan')}`;
+// The party wall. On phones only the corners of the sky and the pavers are
+// free, so four go up; wide screens have open sky either side of the terrace.
+const snaps = [
+  { img: 'full-house', caption: 'Friday ♥', r: -8, place: 'left-[2%] top-[4%] w-[17%] md:left-[2%] md:top-[5%] md:w-[11.5%]' },
+  { img: 'sparklers', caption: '¡Wepa!', r: 9, flip: true, place: 'right-[2%] top-[2%] w-[16%] md:right-[3%] md:top-[4%] md:w-[11%]' },
+  { img: 'sip', caption: 'MEGA', r: 6, place: 'left-[4%] bottom-[2%] w-[15%] md:left-[9.5%] md:bottom-[4%] md:w-[10.5%]' },
+  { img: 'tacos-board', caption: 'Taco Tuesday', r: -5, place: 'left-[22%] bottom-[2%] w-[14%] md:hidden' },
+  { img: 'dj-booth', caption: 'The selector', r: 5, place: 'hidden md:block md:left-[10.5%] md:top-[34%] md:w-[10%]' },
+  { img: 'memories', caption: '¡Cumple!', r: -7, flip: true, place: 'hidden md:block md:right-[12.5%] md:top-[40%] md:w-[9.5%]' },
+  { img: 'bartender', caption: 'Shake it!', r: 11, place: 'hidden md:block md:left-[1%] md:top-[50%] md:w-[9.5%]' },
+  { img: 'welcome', caption: '¡Bienvenidos!', r: -10, back: 'Best night ever ♥ Mezcalito', place: 'hidden lg:block lg:right-[1.5%] lg:top-[47%] lg:w-[9.5%]' },
+  { img: 'one-love', caption: 'One love', r: 4, place: 'hidden xl:block xl:left-[19%] xl:top-[2%] xl:w-[8%]' },
+  { img: 'tacos-board', caption: 'Taco Tuesday', r: -4, place: 'hidden xl:block xl:right-[19%] xl:top-[1%] xl:w-[8%]' },
+] as const satisfies readonly { img: string; caption: string; r: number; place: string; flip?: boolean; back?: string }[];
+
 const bulbs = Array.from({ length: 17 }, (_, i) => {
   // Hang each bulb from the quadratic wire drawn below (M46 118 Q180 136 314 118).
   const u = i / 16;
@@ -44,7 +59,7 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
 <section class:list={['relative overflow-hidden', night ? 'bg-ink text-cream' : 'bg-cream text-ink']} data-part={part}>
   <!-- The sky and the pavers run on past the drawing to the screen edges, so on a
        wide screen the whole terrace shows instead of a crop of it. -->
-  <div style={`background: linear-gradient(to bottom, transparent 88%, #b5523b 88%), linear-gradient(to bottom, ${skyTop}, ${skyBottom})`}>
+  <div class="relative" style={`background: linear-gradient(to bottom, transparent 88%, #b5523b 88%), linear-gradient(to bottom, ${skyTop}, ${skyBottom})`}>
   <svg viewBox="0 0 360 200" class="mx-auto block w-full max-w-5xl" role="img" aria-label="Mezcalito’s terrace on Calle Pedro Mir" preserveAspectRatio="xMidYMax meet" style="max-height: 58vh">
     <defs>
       <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
@@ -130,6 +145,26 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
     <rect x="0" y="176" width="360" height="24" fill="#b5523b" />
     <path d="M0 184h360M0 192h360" stroke="#8f3d2b" stroke-width="0.8" />
   </svg>
+
+  <!-- Snapshots from real nights at Mezcalito, taped up around the terrace like
+       a party wall: tilted every which way, a couple flipped, one lying face
+       down until you turn it over. -->
+  <div class="polaroids pointer-events-none absolute inset-0" aria-hidden="true">
+    {snaps.map((p, i) => (
+      <figure
+        class:list={['polaroid tape pointer-events-auto absolute', p.place, p.flip && 'flipped', p.back && 'facedown']}
+        style={`--r:${p.r}deg; --tape:${-p.r * 1.5}deg; --i:${i}; --sway:${5 + (i % 4)}s`}
+      >
+        <div class="card">
+          <div class="front">
+            <img src={`/img/polaroids/${p.img}.webp`} alt="" width="180" height="180" decoding="async" fetchpriority="low" />
+            <figcaption>{p.caption}</figcaption>
+          </div>
+          {p.back && <div class="back"><p>{p.back}</p></div>}
+        </div>
+      </figure>
+    ))}
+  </div>
   </div>
 
   <div class="mx-auto flow-root max-w-6xl px-4 pt-6 pb-8">
@@ -242,6 +277,105 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
     0% { opacity: 0; transform: translateY(0); }
     20% { opacity: 1; }
     100% { opacity: 0; transform: translateY(-46px) rotate(-12deg); }
+  }
+
+  /* ── The party wall ───────────────────────────────────────────────── */
+  .polaroid {
+    z-index: 1;
+    margin: 0;
+    transform-origin: 50% -10%;
+    rotate: var(--r);
+    animation:
+      pin-up 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
+      swing var(--sway) ease-in-out 900ms infinite alternate;
+    animation-delay: calc(250ms + var(--i) * 90ms), calc(900ms + var(--i) * 90ms);
+    perspective: 700px;
+    transition: scale 250ms ease;
+  }
+  .polaroid:hover {
+    z-index: 3;
+    scale: 1.18;
+  }
+  .polaroid:hover .card {
+    rotate: calc(var(--r) * -1);
+  }
+  .card {
+    position: relative;
+    display: grid;
+    transform-style: preserve-3d;
+    transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1), rotate 300ms ease;
+  }
+  .front,
+  .back {
+    grid-area: 1 / 1;
+    backface-visibility: hidden;
+    background: #fffdf8;
+    padding: 6% 6% 0;
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.25),
+      0 10px 20px -6px rgb(0 0 0 / 0.45);
+  }
+  .front img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    filter: saturate(1.1) contrast(1.04);
+  }
+  /* A couple of snapshots were printed the other way round. */
+  .flipped .front img {
+    transform: scaleX(-1);
+  }
+  .front figcaption {
+    padding: 0.35em 0 0.55em;
+    font-family: var(--font-display);
+    font-size: clamp(0.45rem, 0.9vw, 0.85rem);
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--c-ink);
+    white-space: nowrap;
+  }
+  /* Face down: the back of the photo, with a note scribbled on it. Turns over on hover. */
+  .facedown .card {
+    transform: rotateY(180deg);
+  }
+  .facedown:hover .card {
+    transform: rotateY(0deg);
+  }
+  .back {
+    transform: rotateY(180deg);
+    display: grid;
+    place-items: center;
+    padding: 10%;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 13px, rgb(18 179 184 / 0.18) 13px 14px),
+      #f6efe0;
+  }
+  .back p {
+    margin: 0;
+    rotate: -6deg;
+    font-weight: 700;
+    font-style: italic;
+    font-size: clamp(0.5rem, 0.95vw, 0.9rem);
+    line-height: 1.25;
+    text-align: center;
+    color: var(--c-mezcal);
+  }
+  .polaroid.tape::before {
+    top: -7px;
+    width: 46%;
+    height: 14px;
+  }
+  @keyframes pin-up {
+    from { opacity: 0; transform: translateY(-30px) scale(1.25); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes swing {
+    from { transform: rotate(-1.6deg); }
+    to { transform: rotate(1.6deg); }
   }
 
   /* The headline drops in word by word, with a little dancehall bounce. */
