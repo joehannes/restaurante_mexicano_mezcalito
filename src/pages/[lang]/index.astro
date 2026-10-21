@@ -22,7 +22,12 @@ const ctx = await pageContext(Astro.params.lang, Astro.request);
 if (!ctx) return notFound();
 const { locale, site } = ctx;
 
-const [menu, polaroids, events] = await Promise.all([loadMenu(env.DB), loadGallery(env.DB, { home: true }), loadEvents(env.DB, { today: ctx.today })]);
+const [menu, polaroids, heroPolaroids, events] = await Promise.all([
+  loadMenu(env.DB),
+  loadGallery(env.DB, { home: true }),
+  loadGallery(env.DB, { hero: true }),
+  loadEvents(env.DB, { today: ctx.today }),
+]);
 const featured = currentEvent(events, ctx.today);
 const signatures = menu.filter((i) => i.tags.includes('signature') && !i.hidden).slice(0, 6);
 
@@ -43,7 +48,7 @@ const ticker = [t(locale, 'brand.slogan'), t(locale, 'home.marqueeMega'), ...lin
   description={`${t(locale, 'brand.tagline')} ${t(locale, 'brand.place')}. ${t(locale, 'home.howItWorks')}`}
 >
   <JsonLd slot="head" data={restaurantJsonLd(site, Astro.url.origin, locale)} />
-  <Hero ctx={ctx} />
+  <Hero ctx={ctx} polaroids={heroPolaroids} />
   <div class="overflow-hidden border-y-4 border-ink bg-hibiscus py-2 text-cream" aria-hidden="true">
     <div class="marquee font-display text-xl tracking-wide uppercase md:text-2xl">
       {[0, 1].map(() => (

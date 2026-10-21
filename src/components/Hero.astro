@@ -1,14 +1,19 @@
 ---
 /**
- * The facade hero: Mezcalito's white terrace on Calle Pedro Mir, drawn, with
- * the sky set by Bávaro's actual time of day. Morning sun, midday blue, a
- * happy-hour sunset, and at night the string lights come on over the bays.
+ * The home page's hero: a night on Mezcalito's terrace, filmed there, looping
+ * silently behind a tint that follows Bávaro's time of day (and the season's
+ * colours). Across the top runs a string of lights with polaroids pegged to
+ * it: whichever ones staff tick "In the hero" under Admin → Polaroid wall.
  *
- * Inline SVG, no image request: it paints with the HTML and costs nothing for
- * the largest-contentful-paint budget. Only the bulbs (opacity) and the palms
- * (transform) move. Mezcalito's own logo hangs over the terrace.
+ * Play with it: the polaroids sway on their pegs; brush the pointer through
+ * them and they swing; drag one and it springs back to the line; tap one
+ * and it opens up big with a camera flash. The scene leans with the pointer
+ * and a warm spotlight follows it. Without JavaScript the poster frame and
+ * the polaroids are simply there; with reduced motion nothing moves.
  */
+import '@fontsource/permanent-marker/latin-400.css';
 import type { PageContext } from '../server/page';
+import type { GalleryItem } from '../server/gallery';
 import { localized } from '../domain/types';
 import { activeSpecials } from '../domain/schedule';
 import { formatClock } from '../lib/format';
@@ -18,170 +23,95 @@ import OpenStatus from './OpenStatus.astro';
 
 interface Props {
   ctx: PageContext;
+  /** The polaroids for the string of lights, in order. */
+  polaroids: GalleryItem[];
 }
-const { ctx } = Astro.props;
+const { ctx, polaroids } = Astro.props;
 const { locale, part, season } = ctx;
 
-const SKY = {
-  morning: ['#ffd8a8', '#bfe7f3'],
-  midday: ['#68cfe3', '#c9f1f6'],
-  sunset: ['var(--c-mezcal)', 'var(--c-sunset)'],
-  night: ['#0d0b1a', 'var(--c-mezcal)'],
+/** The colour grade over the footage, from one corner to the other, in the palette (so seasons re-skin it). */
+const TINT = {
+  morning: ['var(--c-gold)', 'var(--c-hibiscus)'],
+  midday: ['var(--c-lagoon)', 'var(--c-gold)'],
+  sunset: ['var(--c-hibiscus)', 'var(--c-sunset)'],
+  night: ['var(--c-mezcal)', 'var(--c-lagoon)'],
 } as const;
-const [skyTop, skyBottom] = SKY[part];
-const night = part === 'night' || part === 'sunset';
+const [tintTop, tintMid] = TINT[part];
 
 const happyHour = activeSpecials(ctx.now, ctx.specials, ctx.tz).find((s) => s.id === 'happy-hour');
 const kicker = season ? localized(season.hero.kicker, locale) : t(locale, `hero.${part}.kicker` as const);
 const headline = season ? localized(season.hero.headline, locale) : t(locale, `hero.${part}.headline` as const);
 const body = season ? localized(season.hero.body, locale) : `${t(locale, 'brand.tagline')} · ${t(locale, 'brand.slogan')}`;
-// The party wall. On phones only the corners of the sky and the pavers are
-// free, so four go up; wide screens have open sky either side of the terrace.
-interface Snap {
-  img: string;
-  caption: string;
-  r: number;
-  place: string;
-  flip?: boolean;
-  back?: string;
-}
-const snaps: Snap[] = [
-  { img: 'full-house', caption: 'Friday ♥', r: -8, place: 'left-[2%] top-[4%] w-[17%] md:left-[2%] md:top-[5%] md:w-[11.5%]' },
-  { img: 'sparklers', caption: '¡Wepa!', r: 9, flip: true, place: 'right-[2%] top-[2%] w-[16%] md:right-[3%] md:top-[4%] md:w-[11%]' },
-  { img: 'sip', caption: 'MEGA', r: 6, place: 'left-[4%] bottom-[2%] w-[15%] md:left-[9.5%] md:bottom-[4%] md:w-[10.5%]' },
-  { img: 'tacos-board', caption: 'Taco Tuesday', r: -5, place: 'left-[22%] bottom-[2%] w-[14%] md:hidden' },
-  { img: 'dj-booth', caption: 'The selector', r: 5, place: 'hidden md:block md:left-[10.5%] md:top-[34%] md:w-[10%]' },
-  { img: 'memories', caption: '¡Cumple!', r: -7, flip: true, place: 'hidden md:block md:right-[12.5%] md:top-[40%] md:w-[9.5%]' },
-  { img: 'bartender', caption: 'Shake it!', r: 11, place: 'hidden md:block md:left-[1%] md:top-[50%] md:w-[9.5%]' },
-  { img: 'welcome', caption: '¡Bienvenidos!', r: -10, back: 'Best night ever ♥ Mezcalito', place: 'hidden lg:block lg:right-[1.5%] lg:top-[47%] lg:w-[9.5%]' },
-  { img: 'one-love', caption: 'One love', r: 4, place: 'hidden xl:block xl:left-[19%] xl:top-[2%] xl:w-[8%]' },
-  { img: 'tacos-board', caption: 'Taco Tuesday', r: -4, place: 'hidden xl:block xl:right-[19%] xl:top-[1%] xl:w-[8%]' },
-];
 
-const bulbs = Array.from({ length: 17 }, (_, i) => {
-  // Hang each bulb from the quadratic wire drawn below (M46 118 Q180 136 314 118).
-  const u = i / 16;
-  return { x: 46 + 268 * u, y: 118 + 36 * u * (1 - u), delay: (i % 5) * 0.4 };
+/** The wire hangs in a shallow curve: height in % of the line's box at position u (0…1) along it. */
+const SAG = 34;
+const wireY = (u: number) => 8 + 4 * SAG * u * (1 - u);
+const snaps = polaroids.slice(0, 9);
+const PHONE = 5;
+// Spread along the wire, kept clear of the screen edges.
+const along = (i: number, n: number, edge: number) => edge + (1 - 2 * edge) * ((i + 0.5) / n);
+const placed = snaps.map((p, i) => {
+  const u = along(i, snaps.length, 0.07);
+  const um = along(i, Math.min(snaps.length, PHONE), 0.1);
+  return { p, u, y: wireY(u), um, ym: wireY(um), caption: localized(p.caption, locale) };
 });
+const bulbs = Array.from({ length: 25 }, (_, i) => ({ u: i / 24, y: wireY(i / 24), delay: (i * 0.37) % 2.4 }));
+const tapes = ['var(--c-gold)', 'var(--c-lagoon)', 'var(--c-hibiscus)', 'var(--c-jungle)', 'var(--c-sunset)'];
 ---
-<section class:list={['relative overflow-hidden', night ? 'bg-ink text-cream' : 'bg-cream text-ink']} data-part={part}>
-  <!-- The sky and the pavers run on past the drawing to the screen edges, so on a
-       wide screen the whole terrace shows instead of a crop of it. -->
-  <div class="relative" style={`background: linear-gradient(to bottom, transparent 88%, #b5523b 88%), linear-gradient(to bottom, ${skyTop}, ${skyBottom})`}>
-  <svg viewBox="0 0 360 200" class="mx-auto block w-full max-w-5xl" role="img" aria-label="Mezcalito’s terrace on Calle Pedro Mir" preserveAspectRatio="xMidYMax meet" style="max-height: 58vh">
-    <defs>
-      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color={skyTop} />
-        <stop offset="1" stop-color={skyBottom} />
-      </linearGradient>
-      <radialGradient id="glow" cx="0.5" cy="0.3" r="0.8">
-        <stop offset="0" stop-color="#ffcf6b" stop-opacity="0.9" />
-        <stop offset="1" stop-color="#ffcf6b" stop-opacity="0" />
-      </radialGradient>
-    </defs>
-    <rect width="360" height="200" fill="url(#sky)" />
+<section class="hero relative isolate overflow-hidden bg-ink text-cream" data-hero data-part={part}>
+  <!-- A night on the terrace: Mezcalito's own footage, cut to a silent loop. -->
+  <div class="stage absolute inset-0 -z-20" aria-hidden="true">
+    <video data-loop="/video/hero.mp4" data-decor poster="/video/hero-poster.webp" muted loop playsinline preload="none" class="size-full object-cover"></video>
+  </div>
+  <div class="tint absolute inset-0 -z-10" style={`--tint-top:${tintTop}; --tint-mid:${tintMid}`} aria-hidden="true"></div>
+  <div class="shade absolute inset-0 -z-10" aria-hidden="true"></div>
+  <div class="halftone absolute inset-0 -z-10 opacity-50 mix-blend-overlay" aria-hidden="true"></div>
+  <div class="bokeh absolute inset-0 -z-10" aria-hidden="true">
+    {[0, 1, 2, 3, 4, 5, 6].map((i) => <span style={`--i:${i}`}></span>)}
+  </div>
+  <div class="spot absolute inset-0 -z-10" aria-hidden="true"></div>
 
-    {part === 'night' ? (
-      <g fill="var(--c-cream)">
-        <path d="M300 30a14 14 0 1 0 12 22 11 11 0 1 1-12-22z" />
-        {[[40, 20], [90, 38], [140, 14], [210, 28], [250, 12], [330, 60]].map(([x, y], i) => (
-          <circle cx={x} cy={y} r="1.1" opacity="0.8" class="star" style={`animation-delay:${i * 0.7}s`} />
-        ))}
-        <!-- Now and then a shooting star crosses over the bay. -->
-        <path class="shooting" d="M0 0l-22 9" stroke="var(--c-cream)" stroke-width="1.2" stroke-linecap="round" style="transform: translate(260px, 8px)" />
-      </g>
-    ) : (
-      <>
-        <circle
-          class="sun"
-          cx={part === 'morning' ? 70 : part === 'midday' ? 200 : 180}
-          cy={part === 'morning' ? 52 : part === 'midday' ? 26 : 70}
-          r={part === 'sunset' ? 26 : 16}
-          fill={part === 'sunset' ? 'var(--c-gold)' : '#fff3b0'}
-        />
-        {part !== 'sunset' && (
-          <g fill="#ffffff" opacity="0.9">
-            <g class="cloud"><ellipse cx="0" cy="34" rx="20" ry="6" /><ellipse cx="10" cy="30" rx="11" ry="7" /></g>
-            <g class="cloud" style="animation-duration: 70s; animation-delay: -30s"><ellipse cx="0" cy="54" rx="15" ry="4.5" /><ellipse cx="7" cy="51" rx="8" ry="5" /></g>
-          </g>
-        )}
-        <!-- A seagull gliding over Calle Pedro Mir towards the beach. -->
-        <path class="gull" d="M0 0q4-4 8 0q4-4 8 0" fill="none" stroke="#141210" stroke-width="1.1" stroke-linecap="round" />
-      </>
-    )}
-
-    <!-- Palms, swaying from the base of the trunk -->
-    <g class="palm" style="transform-origin: 20px 175px" fill={night ? '#08070d' : '#1d5c3a'}>
-      <path d="M18 175c2-30 4-62 10-92l3 1c-5 30-6 61-7 91z" />
-      <path d="M29 84c-14-8-30-6-38 2 12-4 25-2 38-2zM29 84c-6-12-20-18-32-16 12 2 24 8 32 16zM29 84c10-12 26-14 36-10-12 0-24 4-36 10zM29 84c14-4 28 2 34 12-10-6-22-10-34-12z" />
-    </g>
-    <g class="palm" style="transform-origin: 342px 178px; animation-delay: -2s" fill={night ? '#08070d' : '#1d5c3a'}>
-      <path d="M340 178c-1-28-3-55-9-80l-3 1c5 26 6 52 6 79z" />
-      <path d="M330 99c14-8 30-6 38 2-12-4-25-2-38-2zM330 99c6-12 20-18 32-16-12 2-24 8-32 16zM330 99c-10-12-26-14-36-10 12 0 24 4 36 10z" />
-    </g>
-
-    <!-- The building -->
-    <rect x="34" y="66" width="292" height="114" fill={night ? '#e9e2d4' : '#fbfaf6'} />
-    <rect x="34" y="66" width="292" height="30" fill={night ? '#f4efe4' : '#ffffff'} stroke="#141210" stroke-opacity="0.12" />
-    <text x="180" y="89" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="22" letter-spacing="7" fill="#141210">MEZCALITO</text>
-
-    <!-- Three bays between four columns; lit from inside after dark -->
-    {[0, 1, 2].map((i) => (
-      <g>
-        <rect x={52 + i * 88} y="100" width="80" height="72" fill={night ? '#3a2416' : '#6e5a48'} />
-        {night && <rect x={52 + i * 88} y="100" width="80" height="72" fill="url(#glow)" />}
-      </g>
+  <!-- The string of lights, with the polaroids pegged to it. -->
+  <div class="line relative" data-line>
+    <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+      <path d={`M0 ${wireY(0)} Q500 ${8 + 2 * SAG} 1000 ${wireY(1)}`} fill="none" stroke="#141210" stroke-width="2" vector-effect="non-scaling-stroke" />
+    </svg>
+    {bulbs.map((b, i) => (
+      <span class:list={['bulb', i % 2 === 1 && 'hidden md:block']} style={`left:${b.u * 100}%; top:${b.y}%; animation-delay:${b.delay}s`} aria-hidden="true"></span>
     ))}
-    {[0, 1, 2, 3].map((i) => <rect x={42 + i * 88} y="96" width="10" height="80" fill={night ? '#f4efe4' : '#ffffff'} />)}
-
-    <!-- String lights -->
-    <path d="M46 118 Q180 136 314 118" fill="none" stroke="#141210" stroke-width="0.8" opacity={night ? 0.9 : 0.35} />
-    {bulbs.map((b) => (
-      <circle cx={b.x} cy={b.y + 3} r="2.2" fill={night ? '#ffd76a' : '#d9d2c4'} class={night ? 'bulb' : undefined} style={`animation-delay:${b.delay}s`} />
-    ))}
-
-    <!-- After dark the music spills out of the bays. -->
-    {night && (
-      <g fill="#ffd76a" font-family="DM Sans, sans-serif" font-size="11" font-weight="700" aria-hidden="true">
-        {[[86, 0], [140, 1.4], [178, 2.6], [228, 0.8], [272, 2]].map(([x, delay], i) => (
-          <text x={x} y="150" class="note" style={`animation-delay:${delay}s`}>{i % 2 ? '♫' : '♪'}</text>
-        ))}
-      </g>
-    )}
-
-    <!-- Red pavers -->
-    <rect x="0" y="176" width="360" height="24" fill="#b5523b" />
-    <path d="M0 184h360M0 192h360" stroke="#8f3d2b" stroke-width="0.8" />
-  </svg>
-
-  <!-- Snapshots from real nights at Mezcalito, taped up around the terrace like
-       a party wall: tilted every which way, a couple flipped, one lying face
-       down until you turn it over. -->
-  <div class="polaroids pointer-events-none absolute inset-0" aria-hidden="true">
-    {snaps.map((p, i) => (
-      <figure
-        class:list={['polaroid tape pointer-events-auto absolute', p.place, p.flip && 'flipped', p.back && 'facedown']}
-        style={`--r:${p.r}deg; --tape:${-p.r * 1.5}deg; --i:${i}; --sway:${5 + (i % 4)}s`}
+    {placed.map(({ p, u, y, um, ym, caption }, i) => (
+      <button
+        type="button"
+        class:list={['snap', i >= PHONE && 'hidden md:block']}
+        data-snap={i}
+        data-kind={p.kind}
+        data-src={p.src}
+        data-poster={p.poster ?? ''}
+        data-caption={caption}
+        aria-label={caption}
+        style={`--u:${u * 100}%; --y:${y}%; --um:${um * 100}%; --ym:${ym}%; --r:${p.tilt}deg; --tape:${tapes[i % tapes.length]}; --sway:${4.2 + (i % 4) * 0.7}s; --i:${i}`}
       >
-        <div class="card">
-          <div class="front">
-            <img src={`/img/polaroids/${p.img}.webp`} alt="" width="180" height="180" decoding="async" fetchpriority="low" />
-            <figcaption>{p.caption}</figcaption>
-          </div>
-          {p.back && <div class="back"><p>{p.back}</p></div>}
-        </div>
-      </figure>
+        <span class="swinger">
+          <span class="peg" aria-hidden="true"></span>
+          <span class="card">
+            {p.kind === 'video' ? (
+              <video data-loop={p.src} data-decor poster={p.poster ?? undefined} muted loop playsinline preload="none" aria-hidden="true"></video>
+            ) : (
+              <img src={p.src} alt="" width="200" height="200" decoding="async" />
+            )}
+            <span class="cap">{caption}</span>
+          </span>
+        </span>
+      </button>
     ))}
   </div>
-  </div>
 
-  <div class="mx-auto flow-root max-w-6xl px-4 pt-6 pb-8">
-    <!-- Mezcalito's own logo, as on the menus and the furniture, hung over the
-         terrace. Tap it and the sound system answers with an airhorn. -->
+  <div class="relative mx-auto flow-root max-w-6xl px-4 pt-2 pb-10 md:pb-14">
+    <!-- Mezcalito's own logo. Tap it and the sound system answers with an airhorn. -->
     <button
       type="button"
       data-airhorn
-      class="logo-horn group relative float-right -mt-20 ml-4 w-28 cursor-pointer md:-mt-44 md:w-60"
+      class="logo-horn group relative float-right ml-4 w-28 cursor-pointer md:-mt-6 md:w-56"
       aria-label={t(locale, 'hero.airhorn')}
       title={t(locale, 'hero.airhorn')}
     >
@@ -189,24 +119,27 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
       <img
         src="/img/logo-320.webp"
         srcset="/img/logo-160.webp 160w, /img/logo-320.webp 320w, /img/logo-640.webp 640w"
-        sizes="(min-width: 768px) 240px, 112px"
+        sizes="(min-width: 768px) 224px, 112px"
         alt="Mezcalito Bar & Grill"
-        width="240"
-        height="278"
+        width="224"
+        height="259"
         fetchpriority="high"
-        class="relative h-auto w-full drop-shadow-[0_6px_12px_rgba(0,0,0,0.45)]"
+        class="relative h-auto w-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
       />
       <span class="tap sticker absolute -top-3 -left-8 bg-gold text-[10px] text-ink md:-left-6 md:text-sm" style="--tilt:-12deg" aria-hidden="true">📯 {t(locale, 'hero.tap')}</span>
     </button>
-    <p class="font-display tracking-wide text-gold uppercase">{kicker}</p>
-    <h1 class="mt-1 font-display text-5xl leading-[0.95] uppercase sm:text-6xl md:text-7xl" aria-label={headline}>
+    <p class="flex items-center gap-2 font-display tracking-wide text-gold uppercase">
+      <span class="live inline-flex items-center gap-1.5 rounded-full bg-ink/60 px-2 py-0.5 text-xs tracking-[0.18em] text-cream" aria-hidden="true"><span></span>REC</span>
+      {kicker}
+    </p>
+    <h1 class="mt-1 font-display text-5xl leading-[0.95] uppercase drop-shadow-[3px_3px_0_var(--c-ink)] sm:text-6xl md:text-8xl" aria-label={headline}>
       {headline.split(' ').map((word, i) => (
         <><span class="word" style={`--i:${i}`} aria-hidden="true">{word}</span>{' '}</>
       ))}
     </h1>
-    <p class="mt-3 max-w-xl text-lg opacity-90">{body}</p>
+    <p class="mt-3 max-w-xl text-lg">{body}</p>
     <div class="mt-4 flex flex-wrap items-center gap-3">
-      <OpenStatus ctx={ctx} class={night ? 'bg-cream/10' : 'bg-ink/5'} />
+      <OpenStatus ctx={ctx} class="bg-ink/50" />
       {happyHour && (
         <span class="sticker bg-gold text-ink" style="--tilt:-4deg">
           {t(locale, 'hero.happyHourEnds', { time: formatClock(happyHour.end, locale) })}
@@ -217,10 +150,7 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
       <a href={href(locale, '/menu')} class="cone shine rounded-full bg-hibiscus px-7 py-3 text-lg font-bold text-cream shadow-[4px_4px_0_var(--c-ink)]">
         {t(locale, 'hero.order')}
       </a>
-      <a
-        href={href(locale, '/reserve')}
-        class:list={['rounded-full border-2 px-7 py-3 text-lg font-bold', night ? 'border-cream' : 'border-ink']}
-      >
+      <a href={href(locale, '/reserve')} class="rounded-full border-2 border-cream bg-ink/30 px-7 py-3 text-lg font-bold backdrop-blur-sm">
         {t(locale, 'hero.book')}
       </a>
     </div>
@@ -231,173 +161,417 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
         </a>
       </p>
     )}
+    {snaps.length > 0 && <p class="hint mt-6 text-sm text-cream/75">📸 {t(locale, 'hero.snapHint')}</p>}
   </div>
+
+  <!-- A polaroid, opened up big. -->
+  <dialog class="viewer" data-viewer aria-label={t(locale, 'gallery.title')}>
+    <div class="flash" aria-hidden="true"></div>
+    <figure class="sheet">
+      <div class="shot" data-shot></div>
+      <figcaption data-cap></figcaption>
+    </figure>
+    <div class="controls">
+      <button type="button" data-prev aria-label={t(locale, 'hero.prev')}>←</button>
+      <a href={href(locale, '/gallery')} class="more">{t(locale, 'gallery.more')} →</a>
+      <button type="button" data-next aria-label={t(locale, 'hero.next')}>→</button>
+    </div>
+    <button type="button" class="close" data-close aria-label={t(locale, 'hero.close')}>✕</button>
+  </dialog>
 </section>
 
+<script>
+  // The hero's toys: lean with the pointer, brush and drag the polaroids,
+  // and open one up. Nothing here runs for reduced motion except opening.
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+  if (hero) {
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const snaps = [...hero.querySelectorAll<HTMLButtonElement>('[data-snap]')];
+    const viewer = hero.querySelector<HTMLDialogElement>('[data-viewer]')!;
+    const shot = viewer.querySelector<HTMLElement>('[data-shot]')!;
+    const cap = viewer.querySelector<HTMLElement>('[data-cap]')!;
+
+    /** A swing, as if someone brushed past it. */
+    const swing = (snap: HTMLElement, dir: number, force = 1) => {
+      if (still || snap.dataset.busy) return;
+      snap.dataset.busy = '1';
+      const swinger = snap.querySelector<HTMLElement>('.swinger')!;
+      const a = 16 * force * dir;
+      swinger
+        .animate([{ rotate: '0deg' }, { rotate: `${a}deg` }, { rotate: `${-a * 0.6}deg` }, { rotate: `${a * 0.32}deg` }, { rotate: `${-a * 0.14}deg` }, { rotate: '0deg' }], {
+          duration: 1700,
+          easing: 'ease-out',
+        })
+        .finished.finally(() => delete snap.dataset.busy);
+    };
+
+    // The scene leans away from the pointer; a warm spotlight follows it.
+    let lastX = 0;
+    let frame = 0;
+    hero.addEventListener('pointermove', (e) => {
+      const box = hero.getBoundingClientRect();
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      if (e.pointerType === 'mouse') {
+        const over = (e.target as Element).closest<HTMLElement>('[data-snap]');
+        if (over && Math.abs(dx) > 3 && !dragging) swing(over, Math.sign(dx), Math.min(1, Math.abs(dx) / 18));
+      }
+      if (still) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        hero.style.setProperty('--mx', `${e.clientX - box.left}px`);
+        hero.style.setProperty('--my', `${e.clientY - box.top}px`);
+        hero.style.setProperty('--px', ((e.clientX - box.left) / box.width - 0.5).toFixed(3));
+        hero.style.setProperty('--py', ((e.clientY - box.top) / box.height - 0.5).toFixed(3));
+      });
+    });
+
+    // A gust when the page starts to scroll, rippling along the line.
+    let gustAt = 0;
+    addEventListener(
+      'scroll',
+      () => {
+        const now = Date.now();
+        if (now - gustAt < 4000 || scrollY > hero.offsetHeight) return;
+        gustAt = now;
+        snaps.forEach((s, i) => setTimeout(() => swing(s, 1, 0.55), i * 70));
+      },
+      { passive: true },
+    );
+
+    // Drag one off the line and it springs back; a tap opens it.
+    let dragging: { snap: HTMLElement; x: number; y: number; moved: boolean } | undefined;
+    let suppressClick = false;
+    snaps.forEach((snap) => {
+      const swinger = snap.querySelector<HTMLElement>('.swinger')!;
+      snap.addEventListener('pointerdown', (e) => {
+        if (still || e.button !== 0) return;
+        dragging = { snap, x: e.clientX, y: e.clientY, moved: false };
+        snap.setPointerCapture(e.pointerId);
+      });
+      snap.addEventListener('pointermove', (e) => {
+        if (dragging?.snap !== snap) return;
+        const dx = e.clientX - dragging.x;
+        const dy = Math.max(-20, e.clientY - dragging.y);
+        if (!dragging.moved && Math.hypot(dx, dy) < 6) return;
+        dragging.moved = true;
+        snap.classList.add('held');
+        swinger.style.translate = `${dx}px ${dy}px`;
+        swinger.style.rotate = `${Math.max(-35, Math.min(35, -dx * 0.12))}deg`;
+      });
+      const release = () => {
+        if (dragging?.snap !== snap) return;
+        const { moved } = dragging;
+        dragging = undefined;
+        snap.classList.remove('held');
+        if (!moved) return;
+        // The click a drag ends with (if the browser sends one) must not open the viewer.
+        suppressClick = true;
+        setTimeout(() => (suppressClick = false), 60);
+        const from = { translate: swinger.style.translate || '0 0', rotate: swinger.style.rotate || '0deg' };
+        swinger.style.translate = '';
+        swinger.style.rotate = '';
+        swinger.animate(
+          [
+            from,
+            { translate: '0 -6px', rotate: `${-parseFloat(from.rotate) * 0.5}deg`, offset: 0.45 },
+            { translate: '0 2px', rotate: `${parseFloat(from.rotate) * 0.2}deg`, offset: 0.7 },
+            { translate: '0 0', rotate: '0deg' },
+          ],
+          { duration: 900, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
+        );
+      };
+      snap.addEventListener('pointerup', release);
+      snap.addEventListener('pointercancel', release);
+      snap.addEventListener('click', () => {
+        if (suppressClick) return;
+        open(Number(snap.dataset.snap));
+      });
+    });
+
+    // The viewer: one polaroid, big, with a camera flash.
+    let current = 0;
+    const show = (i: number) => {
+      current = (i + snaps.length) % snaps.length;
+      const { kind, src, poster, caption } = snaps[current]!.dataset;
+      shot.replaceChildren();
+      if (kind === 'video') {
+        const v = document.createElement('video');
+        Object.assign(v, { src: src!, muted: true, loop: true, playsInline: true, autoplay: !still, controls: still });
+        if (poster) v.poster = poster;
+        shot.appendChild(v);
+      } else {
+        const img = document.createElement('img');
+        Object.assign(img, { src: src!, alt: caption ?? '' });
+        shot.appendChild(img);
+      }
+      cap.textContent = caption ?? '';
+      viewer.classList.remove('flashing');
+      void viewer.offsetWidth;
+      viewer.classList.add('flashing');
+    };
+    const open = (i: number) => {
+      show(i);
+      viewer.showModal();
+    };
+    viewer.querySelector('[data-prev]')!.addEventListener('click', () => show(current - 1));
+    viewer.querySelector('[data-next]')!.addEventListener('click', () => show(current + 1));
+    viewer.querySelector('[data-close]')!.addEventListener('click', () => viewer.close());
+    viewer.addEventListener('click', (e) => e.target === viewer && viewer.close());
+    viewer.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(current - 1);
+      if (e.key === 'ArrowRight') show(current + 1);
+    });
+    viewer.addEventListener('close', () => shot.replaceChildren());
+  }
+</script>
+
 <style>
-  .palm {
-    animation: sway 7s ease-in-out infinite;
+  .hero {
+    --px: 0;
+    --py: 0;
+    --mx: 70%;
+    --my: 30%;
+    display: flex;
+    flex-direction: column;
   }
-  .bulb,
-  .star {
-    animation: twinkle 3.2s ease-in-out infinite;
+  @media (min-width: 768px) {
+    .hero {
+      min-height: min(94svh, 860px);
+    }
   }
-  .sun {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: glow 6s ease-in-out infinite;
-  }
-  @keyframes glow {
-    50% { transform: scale(1.08); }
-  }
-  .cloud {
-    animation: drift 52s linear infinite;
-    animation-delay: -12s;
-  }
-  @keyframes drift {
-    from { transform: translateX(-40px); }
-    to { transform: translateX(400px); }
-  }
-  .gull {
-    animation: glide 24s linear infinite;
-    animation-delay: -6s;
-  }
-  @keyframes glide {
-    from { transform: translate(-30px, 48px); }
-    50% { transform: translate(180px, 30px); }
-    to { transform: translate(400px, 44px); }
-  }
-  .shooting {
-    opacity: 0;
-    animation: shoot 9s ease-in infinite;
-    animation-delay: 3s;
-  }
-  @keyframes shoot {
-    0%, 88% { opacity: 0; transform: translate(260px, 8px); }
-    90% { opacity: 1; }
-    100% { opacity: 0; transform: translate(170px, 46px); }
-  }
-  .note {
-    opacity: 0;
-    animation: rise 4s ease-out infinite;
-  }
-  @keyframes rise {
-    0% { opacity: 0; transform: translateY(0); }
-    20% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(-46px) rotate(-12deg); }
+  .hero > .relative.mx-auto {
+    margin-top: auto;
+    width: 100%;
   }
 
-  /* ── The party wall ───────────────────────────────────────────────── */
-  .polaroid {
+  /* The footage leans gently away from the pointer. */
+  .stage {
+    transform: scale(1.08) translate(calc(var(--px) * -18px), calc(var(--py) * -12px));
+    transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .stage video {
+    filter: saturate(1.25) contrast(1.08);
+  }
+  /* A colour grade over the footage: blended, so the faces and lights keep their detail. */
+  .tint {
+    background: linear-gradient(155deg, var(--tint-top) 10%, var(--tint-mid) 90%);
+    mix-blend-mode: overlay;
+    opacity: 0.9;
+  }
+  /* Dark enough at the bottom for the words, and round the edges like a lens. */
+  .shade {
+    background:
+      linear-gradient(to bottom, rgb(20 18 16 / 0.35) 0%, transparent 22%, rgb(20 18 16 / 0.35) 48%, rgb(20 18 16 / 0.88) 78%, var(--c-ink) 100%),
+      radial-gradient(130% 90% at 50% 30%, transparent 55%, rgb(20 18 16 / 0.55) 100%);
+  }
+  /* Out-of-focus lights drifting past the lens. */
+  .bokeh > span {
+    position: absolute;
+    left: calc(8% + var(--i) * 13%);
+    top: calc(18% + (var(--i) * 37 % 50) * 1%);
+    width: calc(3rem + (var(--i) * 17 % 5) * 1rem);
+    aspect-ratio: 1;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgb(255 215 106 / 0.45), rgb(255 215 106 / 0.08) 60%, transparent 70%);
+    mix-blend-mode: screen;
+    filter: blur(2px);
+    animation: bokeh calc(14s + var(--i) * 2.3s) ease-in-out infinite alternate;
+    animation-delay: calc(var(--i) * -3.1s);
+  }
+  .bokeh > span:nth-child(3n) {
+    background: radial-gradient(circle, color-mix(in srgb, var(--c-hibiscus) 50%, transparent), transparent 70%);
+  }
+  .bokeh > span:nth-child(3n + 1) {
+    background: radial-gradient(circle, color-mix(in srgb, var(--c-lagoon) 45%, transparent), transparent 70%);
+  }
+  @keyframes bokeh {
+    from { transform: translate(0, 0) scale(0.9); opacity: 0.5; }
+    50% { opacity: 1; }
+    to { transform: translate(6vw, -4vh) scale(1.15); opacity: 0.6; }
+  }
+  .spot {
+    background: radial-gradient(circle 22rem at var(--mx) var(--my), rgb(255 215 106 / 0.16), transparent 70%);
+    mix-blend-mode: screen;
+    transition: background-position 300ms;
+  }
+
+  /* ── The string of lights ───────────────────────────────────────────── */
+  .line {
+    height: 12.5rem;
+    margin: 0.5rem -2% 0;
+    transform: translateX(calc(var(--px) * 12px));
+    transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @media (min-width: 768px) {
+    .line {
+      height: 19rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .line {
+      height: 21rem;
+    }
+  }
+  .bulb {
+    position: absolute;
+    width: 0.55rem;
+    height: 0.8rem;
+    translate: -50% 1px;
+    border-radius: 45% 45% 50% 50%;
+    background: #ffd76a;
+    box-shadow:
+      0 0 6px 2px rgb(255 215 106 / 0.75),
+      0 0 22px 6px rgb(255 190 80 / 0.35);
+    animation: twinkle 2.6s ease-in-out infinite;
+  }
+  [data-part='morning'] .bulb,
+  [data-part='midday'] .bulb {
+    box-shadow: 0 0 6px 1px rgb(255 215 106 / 0.6);
+  }
+
+  /* A polaroid hanging from a peg on the wire. */
+  .snap {
+    position: absolute;
     z-index: 1;
-    margin: 0;
-    transform-origin: 50% -10%;
-    rotate: var(--r);
+    left: var(--um);
+    top: var(--ym);
+    width: clamp(4.4rem, 18vw, 6.8rem);
+    translate: -50% -0.35rem;
+    transform-origin: 50% 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: grab;
+    touch-action: pan-y;
     animation:
-      pin-up 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
-      swing var(--sway) ease-in-out 900ms infinite alternate;
-    animation-delay: calc(250ms + var(--i) * 90ms), calc(900ms + var(--i) * 90ms);
-    perspective: 700px;
-    transition: scale 250ms ease;
+      peg-in 800ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
+      snap-sway var(--sway) ease-in-out infinite alternate;
+    animation-delay: calc(200ms + var(--i) * 110ms), calc(var(--i) * -0.6s);
   }
-  .polaroid:hover {
-    z-index: 3;
-    scale: 1.18;
+  @media (min-width: 768px) {
+    .snap {
+      left: var(--u);
+      top: var(--y);
+      width: clamp(6.5rem, 10vw, 9.5rem);
+    }
   }
-  .polaroid:hover .card {
-    rotate: calc(var(--r) * -1);
+  .snap:hover,
+  .snap:focus-visible,
+  .snap.held {
+    z-index: 4;
+  }
+  .snap.held {
+    cursor: grabbing;
+  }
+  .swinger {
+    display: block;
+    transform-origin: 50% 0;
+  }
+  .peg {
+    position: absolute;
+    z-index: 2;
+    top: -0.25rem;
+    left: 50%;
+    width: 0.55rem;
+    height: 1.35rem;
+    translate: -50% 0;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #c99a62, #e9c48f 45%, #b8854d);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+  }
+  .peg::after {
+    content: '';
+    position: absolute;
+    inset: 40% -1px auto;
+    height: 2px;
+    background: #8a8a8a;
   }
   .card {
-    position: relative;
-    display: grid;
-    transform-style: preserve-3d;
-    transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1), rotate 300ms ease;
-  }
-  .front,
-  .back {
-    grid-area: 1 / 1;
-    backface-visibility: hidden;
-    background: #fffdf8;
+    display: block;
+    margin-top: 0.6rem;
     padding: 6% 6% 0;
+    background: #fffdf8;
+    rotate: var(--r);
     box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.25),
-      0 10px 20px -6px rgb(0 0 0 / 0.45);
+      0 1px 2px rgb(0 0 0 / 0.3),
+      0 14px 24px -8px rgb(0 0 0 / 0.6);
+    transition:
+      rotate 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      scale 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 300ms;
   }
-  .front img {
+  .card > img,
+  .card > video {
     display: block;
     width: 100%;
-    height: auto;
     aspect-ratio: 1;
     object-fit: cover;
-    filter: saturate(1.1) contrast(1.04);
+    background: #2a2622;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
   }
-  /* A couple of snapshots were printed the other way round. */
-  .flipped .front img {
-    transform: scaleX(-1);
-  }
-  .front figcaption {
-    padding: 0.35em 0 0.55em;
-    font-family: var(--font-display);
-    font-size: clamp(0.45rem, 0.9vw, 0.85rem);
-    line-height: 1;
-    letter-spacing: 0.04em;
+  .cap {
+    display: block;
+    padding: 0.35em 0.1em 0.5em;
+    font-family: 'Permanent Marker', 'Comic Sans MS', cursive;
+    font-size: clamp(0.5rem, 2.3vw, 0.85rem);
+    line-height: 1.05;
     text-align: center;
-    text-transform: uppercase;
-    color: var(--c-ink);
-    white-space: nowrap;
+    color: #1f2a6b;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em;
   }
-  /* Face down: the back of the photo, with a note scribbled on it. Turns over on hover. */
-  .facedown .card {
-    transform: rotateY(180deg);
+  @media (min-width: 768px) {
+    .cap {
+      font-size: clamp(0.6rem, 0.95vw, 0.85rem);
+    }
   }
-  .facedown:hover .card {
-    transform: rotateY(0deg);
+  .snap:hover .card,
+  .snap:focus-visible .card,
+  .snap.held .card {
+    rotate: 0deg;
+    scale: 1.14;
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.3),
+      0 26px 36px -10px rgb(0 0 0 / 0.7);
   }
-  .back {
-    transform: rotateY(180deg);
-    display: grid;
-    place-items: center;
-    padding: 10%;
-    background:
-      repeating-linear-gradient(0deg, transparent 0 13px, rgb(18 179 184 / 0.18) 13px 14px),
-      #f6efe0;
+  .snap:focus-visible {
+    outline: none;
   }
-  .back p {
-    margin: 0;
-    rotate: -6deg;
-    font-weight: 700;
-    font-style: italic;
-    font-size: clamp(0.5rem, 0.95vw, 0.9rem);
-    line-height: 1.25;
-    text-align: center;
-    color: var(--c-mezcal);
+  .snap:focus-visible .card {
+    outline: 3px solid var(--c-gold);
+    outline-offset: 3px;
   }
-  .polaroid.tape::before {
-    top: -7px;
-    width: 46%;
-    height: 14px;
+  @keyframes peg-in {
+    from { opacity: 0; transform: translateY(-40px) rotate(-14deg); }
   }
-  @keyframes pin-up {
-    from { opacity: 0; transform: translateY(-30px) scale(1.25); }
-    to { opacity: 1; transform: none; }
-  }
-  @keyframes swing {
-    from { transform: rotate(-1.6deg); }
-    to { transform: rotate(1.6deg); }
+  @keyframes snap-sway {
+    from { transform: rotate(-2.4deg); }
+    to { transform: rotate(2.4deg); }
   }
 
-  /* The headline drops in word by word, with a little dancehall bounce. */
+  /* ── The words ──────────────────────────────────────────────────────── */
+  .live > span {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--c-hibiscus);
+    animation: pulse-dot 1.2s steps(2, jump-none) infinite;
+  }
   .word {
     display: inline-block;
     animation: drop 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    animation-delay: calc(120ms + var(--i) * 110ms);
+    animation-delay: calc(500ms + var(--i) * 110ms);
   }
   @keyframes drop {
     from { opacity: 0; transform: translateY(-0.6em) rotate(-6deg); }
     to { opacity: 1; transform: none; }
   }
-
-  /* The logo's sound rings, and the "tap me" sticker that shows it plays. */
   .rings > span {
     position: absolute;
     inset: 18% 12% 30%;
@@ -424,5 +598,107 @@ const bulbs = Array.from({ length: 17 }, (_, i) => {
     outline: 3px solid var(--c-gold);
     outline-offset: 4px;
     border-radius: 1rem;
+  }
+  :global(html:not(.js)) .hint {
+    display: none;
+  }
+
+  /* ── The viewer ─────────────────────────────────────────────────────── */
+  .viewer {
+    margin: auto;
+    width: min(88vw, 30rem, 62dvh);
+    max-height: 94dvh;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    color: var(--c-cream);
+  }
+  .viewer::backdrop {
+    background: rgb(20 18 16 / 0.82);
+    backdrop-filter: blur(4px);
+  }
+  .viewer[open] .sheet {
+    animation: viewer-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .sheet {
+    margin: 0;
+    padding: 0.9rem 0.9rem 0;
+    background: #fffdf8;
+    rotate: -1.5deg;
+    box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.8);
+  }
+  /* Made by the script, so outside this component's scoped styles. */
+  .shot > :global(img),
+  .shot > :global(video) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: #2a2622;
+  }
+  .sheet figcaption {
+    padding: 0.8rem 0.5rem 1.1rem;
+    font-family: 'Permanent Marker', 'Comic Sans MS', cursive;
+    font-size: 1.5rem;
+    text-align: center;
+    color: #1f2a6b;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.2rem;
+  }
+  .controls button,
+  .close {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 999px;
+    border: 3px solid var(--c-ink);
+    background: var(--c-gold);
+    color: var(--c-ink);
+    font-size: 1.3rem;
+    font-weight: 800;
+    box-shadow: 3px 3px 0 var(--c-ink);
+  }
+  .controls .more {
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .close {
+    position: absolute;
+    top: -1.2rem;
+    right: -0.8rem;
+    width: 2.6rem;
+    height: 2.6rem;
+    background: var(--c-hibiscus);
+    color: var(--c-cream);
+  }
+  .flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: #fff;
+    opacity: 0;
+  }
+  .viewer.flashing .flash {
+    animation: camera-flash 650ms ease-out;
+  }
+  @keyframes camera-flash {
+    0% { opacity: 0.95; }
+    100% { opacity: 0; }
+  }
+  @keyframes viewer-pop {
+    from { opacity: 0; transform: scale(0.6) rotate(-10deg) translateY(-40px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stage,
+    .line {
+      transform: none;
+    }
   }
 </style>

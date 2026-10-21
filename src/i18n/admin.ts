@@ -412,6 +412,8 @@ const en = {
   'payments.fromWorker': 'Credentials set as Worker secrets are in use and win over these.',
   'common.uploadVideo': 'Upload video',
   'payments.passwordFirst': 'Change the admin password from “admin” first — until then nobody can set where online payments go.',
+  'gallery.onHero': 'In the hero (on the string of lights)',
+  'gallery.introHero': 'Ticked “in the hero” ones hang on the string of lights at the top of the home page, in this order (nine on wide screens, five on phones).',
 };
 
 export type AdminKey = keyof typeof en;
@@ -827,6 +829,8 @@ const es: Record<AdminKey, string> = {
   'payments.fromWorker': 'Se usan las credenciales puestas como secretos del Worker, y tienen prioridad sobre estas.',
   'common.uploadVideo': 'Subir video',
   'payments.passwordFirst': 'Primero cambia la contraseña del admin «admin»; hasta entonces nadie puede decidir a dónde van los pagos en línea.',
+  'gallery.onHero': 'En la portada (en la guirnalda de luces)',
+  'gallery.introHero': 'Las marcadas «en la portada» cuelgan de la guirnalda de luces arriba del inicio, en este orden (nueve en pantallas grandes, cinco en teléfonos).',
 };
 
 const dictionaries: Record<AdminLocale, Record<AdminKey, string>> = { en, es };

@@ -175,6 +175,7 @@ export interface GalleryInput {
   caption: Localized;
   tilt: number;
   onHome: boolean;
+  onHero: boolean;
   published: boolean;
 }
 
@@ -188,7 +189,7 @@ export function parseGallery(body: unknown): Parsed<GalleryInput> {
   if (!caption) errors.push('caption');
   const tilt = isNum(body.tilt, -12, 12) ? Math.round(body.tilt * 10) / 10 : (errors.push('tilt'), 0);
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { kind, src, poster, caption: caption!, tilt, onHome: body.onHome !== false, published: body.published !== false } };
+  return { ok: true, value: { kind, src, poster, caption: caption!, tilt, onHome: body.onHome !== false, onHero: body.onHero === true, published: body.published !== false } };
 }
 
 // ── Marketing events ──────────────────────────────────────────────────────

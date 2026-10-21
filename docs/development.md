@@ -119,7 +119,10 @@ being in front is not trusted on its own.
   Drafts are visible only to signed-in staff.
 - **Polaroid wall**: photos and short silent mp4 clips (up to 25 MB) with a
   caption, tilt and order; ticked ones (the first ten) also hang on the
-  home page, all of them on `/<lang>/gallery`.
+  home page, all of them on `/<lang>/gallery`. Ones ticked "In the hero"
+  are pegged to the string of lights across the top of the home page (nine
+  on wide screens, five on phones), over `public/video/hero.mp4`, a silent
+  loop cut from Mezcalito's promo and colour-graded by time of day.
 - **Settings → Payments**: which ways to pay guests see at checkout (cash,
   card on delivery, Azul, PayPal), a note shown at checkout, and (owners
   only) the Azul and PayPal credentials. Secrets set on the Worker win over

@@ -377,4 +377,8 @@ export const es: Record<UiKey, string> = {
   'art.story': 'Ilustración: Jamaica y México brindando en la misma mesa',
   'art.karaoke': 'Ilustración: noche de karaoke, alguien canta con el micrófono en alto',
   'art.fiesta': 'Ilustración: una noche en la terraza de Mezcalito, sound system, baile y la parrilla',
+  'hero.snapHint': 'Pasa el dedo por las polaroids, arrastra una o tócala para abrirla.',
+  'hero.prev': 'Foto anterior',
+  'hero.next': 'Foto siguiente',
+  'hero.close': 'Cerrar',
 };

@@ -376,6 +376,10 @@ export const en = {
   'art.story': 'Illustration: Jamaica and Mexico toasting at one table',
   'art.karaoke': 'Illustration: karaoke night, a singer with the mic held high',
   'art.fiesta': 'Illustration: a night on Mezcalito’s terrace, sound system, dancing and the grill',
+  'hero.snapHint': 'Brush through the polaroids, drag one off the line, or tap one to open it.',
+  'hero.prev': 'Previous photo',
+  'hero.next': 'Next photo',
+  'hero.close': 'Close',
 };
 
 export type UiKey = keyof typeof en;

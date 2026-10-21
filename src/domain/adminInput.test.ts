@@ -117,7 +117,7 @@ describe('parseGroup', () => {
 describe('parseGallery', () => {
   it('takes site photos, uploads and clips', () => {
     const photo = parseGallery({ kind: 'photo', src: '/img/polaroids/sip.webp', caption: { en: 'Sip' }, tilt: 4.25 });
-    expect(photo).toEqual({ ok: true, value: { kind: 'photo', src: '/img/polaroids/sip.webp', poster: null, caption: { en: 'Sip' }, tilt: 4.3, onHome: true, published: true } });
+    expect(photo).toEqual({ ok: true, value: { kind: 'photo', src: '/img/polaroids/sip.webp', poster: null, caption: { en: 'Sip' }, tilt: 4.3, onHome: true, onHero: false, published: true } });
     expect(parseGallery({ kind: 'video', src: '/media/gallery/a.mp4', poster: '/media/gallery/a.webp', caption: { en: 'Go' }, tilt: 0 }).ok).toBe(true);
   });
   it('refuses other places, a photo as video and wild tilts', () => {

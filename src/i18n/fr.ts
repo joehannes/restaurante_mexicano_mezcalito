@@ -377,4 +377,8 @@ export const fr: Record<UiKey, string> = {
   'art.story': 'Illustration : la Jamaïque et le Mexique trinquent à la même table',
   'art.karaoke': 'Illustration : soirée karaoké, une chanteuse micro levé',
   'art.fiesta': 'Illustration : une nuit sur la terrasse de Mezcalito, sound system, danse et grill',
+  'hero.snapHint': 'Effleurez les polaroids, décrochez-en une, ou touchez-la pour l’ouvrir.',
+  'hero.prev': 'Photo précédente',
+  'hero.next': 'Photo suivante',
+  'hero.close': 'Fermer',
 };

@@ -70,7 +70,8 @@ export default function GalleryAdmin({ dict, locale }: { dict: AdminDictionary; 
           {dict['gallery.view']} ↗
         </a>
       </div>
-      <p className="mb-6 max-w-2xl text-sm text-ink/70">{dict['gallery.intro']}</p>
+      <p className="mb-2 max-w-2xl text-sm text-ink/70">{dict['gallery.intro']}</p>
+      <p className="mb-6 max-w-2xl text-sm font-semibold">{dict['gallery.introHero']}</p>
       {!items.length && <p>{dict['common.none']}</p>}
       <ul className="grid gap-3">
         {items.map((g, i) => (
@@ -82,6 +83,10 @@ export default function GalleryAdmin({ dict, locale }: { dict: AdminDictionary; 
                 {g.kind === 'video' ? `🎥 ${dict['gallery.video']}` : `📷 ${dict['gallery.photo']}`} · {g.tilt}°
               </span>
             </span>
+            <label className="flex items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" className="size-5" checked={g.onHero} onChange={(e) => set(g, { onHero: e.target.checked })} />
+              {dict['gallery.onHero']}
+            </label>
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input type="checkbox" className="size-5" checked={g.onHome} onChange={(e) => set(g, { onHome: e.target.checked })} />
               {dict['gallery.onHome']}
@@ -125,12 +130,13 @@ function GalleryEditor({ item, dict, locale, onClose, onSaved }: { item?: Galler
   // A new one gets a random lean, so the wall never lines up.
   const [tilt, setTilt] = useState(item?.tilt ?? Math.round((Math.random() * 12 - 6) * 2) / 2);
   const [onHome, setOnHome] = useState(item?.onHome ?? true);
+  const [onHero, setOnHero] = useState(item?.onHero ?? false);
   const [published, setPublished] = useState(item?.published ?? true);
   const [errors, setErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    const body = { kind, src, poster: kind === 'video' ? poster : null, caption, tilt, onHome, published };
+    const body = { kind, src, poster: kind === 'video' ? poster : null, caption, tilt, onHome, onHero, published };
     setSaving(true);
     const result = item ? await api(`/gallery/${item.id}`, { method: 'PUT', body }) : await api('/gallery', { body });
     setSaving(false);
@@ -183,6 +189,10 @@ function GalleryEditor({ item, dict, locale, onClose, onSaved }: { item?: Galler
         <Field label={`${dict['gallery.tilt']}: ${tilt}°`}>
           <input type="range" min={-12} max={12} step={0.5} value={tilt} onChange={(e) => setTilt(Number(e.target.value))} className="w-full accent-hibiscus" />
         </Field>
+        <label className="flex items-center gap-2 font-semibold">
+          <input type="checkbox" checked={onHero} onChange={(e) => setOnHero(e.target.checked)} className="size-5" />
+          {dict['gallery.onHero']}
+        </label>
         <label className="flex items-center gap-2 font-semibold">
           <input type="checkbox" checked={onHome} onChange={(e) => setOnHome(e.target.checked)} className="size-5" />
           {dict['gallery.onHome']}
